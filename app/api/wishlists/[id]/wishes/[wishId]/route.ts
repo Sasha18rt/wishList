@@ -45,7 +45,6 @@ export async function PUT(
       await wishlist.save();
   
       const updatedWish = wish.toObject();
-      updatedWish.price = updatedWish.price?.toString() ?? "";
   
       return new Response(JSON.stringify(updatedWish), { status: 200 });
     } catch (error) {

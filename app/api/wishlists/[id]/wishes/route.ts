@@ -116,8 +116,8 @@ export async function POST(
       added_at: new Date(),
     };
 
-    if (name.length > 10 ){
-      return new Response(JSON.stringify({ error: "Title is too long. Maximum length is 10 characters." }), { status: 400 });
+    if (name.length > 20 ){
+      return new Response(JSON.stringify({ error: "Title is too long. Maximum length is 20 characters." }), { status: 400 });
     }
     if (description.length > 200 ){
       return new Response(JSON.stringify({ error: "Description is too long. Maximum length is 200 characters." }), { status: 400 });

@@ -158,12 +158,7 @@ export default function UserProfileModal({ isOpen, onClose, user }: Props) {
                       <span className="font-semibold">Role:</span> {user.role}
                     </div>
                   )}
-                  {user.googleId && (
-                    <div>
-                      <span className="font-semibold">Google ID:</span>{" "}
-                      {user.googleId}
-                    </div>
-                  )}
+             
                   {formattedDate && (
                     <div>
                       <span className="font-semibold">Account Created:</span>{" "}

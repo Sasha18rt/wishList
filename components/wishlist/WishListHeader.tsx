@@ -67,11 +67,11 @@ const WishlistHeader = ({
                   />
                 </div>
               </div>
-              <ul className="menu menu-sm dropdown-content bg-base-100 rounded-box mt-3 w-52 p-2 shadow">
-                <li><a href="/dashboard">My wishlists</a></li>
-                <li><button onClick={onShowUserProfile}>Profile</button></li>
-                <li><button className="hover:bg-error/20" onClick={() => signOut()}>Logout</button></li>
-              </ul>
+               <ul tabIndex={0} className="menu menu-sm dropdown-content bg-base-100 rounded-box mt-3 w-52 p-2 shadow">
+    <li><a href="/dashboard">My wishlists</a></li>
+    <li><button onClick={onShowUserProfile}>Profile</button></li>
+    <li><button onClick={() => signOut()}>Logout</button></li>
+  </ul>
             </div>
           </div>
         ) : (
