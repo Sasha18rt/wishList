@@ -1,12 +1,17 @@
 import connectMongo from "@/libs/mongoose";
+import User from "@/models/User";
 import Wishlist from "@/models/Wishlist";
 import Reservation from "@/models/Reservations";
-import User from "@/models/User"; 
+import mongoose from "mongoose";
+ User;
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    await connectMongo();
     const { id } = params;
+    await connectMongo();
 
     const wishlist = await Wishlist.findById(id).populate(
       "user_id",

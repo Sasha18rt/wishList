@@ -5,12 +5,9 @@ import { authOptions } from "@/libs/next-auth";
 import config from "@/config";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import clientPromise from "@/libs/mongo";
 
-// This is a server-side component to ensure the user is logged in.
-// If not, it will redirect to the login page.
-// It's applied to all subpages of /dashboard in /app/dashboard/*** pages
-// You can also add custom static UI elements like a Navbar, Sidebar, Footer, etc..
-// See https://shipfa.st/docs/tutorials/private-page
+clientPromise.catch((err) => console.error("MongoDB connection error:", err));
 export default async function LayoutPrivate({
   children,
 }: {
