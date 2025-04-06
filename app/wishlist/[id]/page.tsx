@@ -7,11 +7,7 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import EditWishlistModal from "@/components/wishlist/EditWishlistModal";
 import EditWishModal from "@/components/wishlist/EditWishModal";
 import AddWishModal from "@/components/wishlist/AddWishModal";
-import { Settings, Plus } from "lucide-react";
-import Link from "next/link";
-import Image from "next/image";
-import config from "@/config";
-import logo from "@/app/icon.png";
+
 import ShowMoreButton from "@/components/wishlist/ShowMoreButton";
 import UserProfileModal from "@/components/user/UserProfileModal";
 import WishlistHeader from "@/components/wishlist/WishListHeader";
