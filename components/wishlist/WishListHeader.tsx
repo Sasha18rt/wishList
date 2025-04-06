@@ -87,7 +87,7 @@ const WishlistHeader = ({
                     <img src={session.user.image} alt={session.user.name} />
                   </div>
                 </div>
-                <ul className="menu menu-sm dropdown-content bg-base-100 rounded-box mt-3 w-52 p-2 shadow">
+                <ul tabIndex={0} className="menu menu-sm dropdown-content bg-base-100 rounded-box mt-3 w-52 p-2 shadow">
                   <li><a href="/dashboard">My wishlists</a></li>
                   <li><button onClick={onShowUserProfile}>Profile</button></li>
                   <li><button onClick={() => signOut()}>Logout</button></li>
