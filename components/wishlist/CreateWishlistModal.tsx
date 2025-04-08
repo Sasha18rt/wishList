@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 export default function CreateWishlistModal({
   isModalOpen,
   setIsModalOpen,
+  onCreated,
 }: {
   isModalOpen: boolean;
   setIsModalOpen: (open: boolean) => void;
@@ -33,16 +34,19 @@ export default function CreateWishlistModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, theme, visibility }),
       });
-
+      
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(errorText || "Failed to create wishlist");
       }
-
+      
+      const newWishlist = await response.json(); 
+      onCreated(newWishlist); 
+      
       toast.success("Wishlist created successfully!");
       setTitle("");
-
-      setIsModalOpen(false)
+      setIsModalOpen(false);
+      
 
     } catch (error) {
       console.error("Error:", error);
