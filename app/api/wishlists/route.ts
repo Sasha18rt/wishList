@@ -3,6 +3,7 @@ import { authOptions } from "@/libs/next-auth";
 import connectMongo from "@/libs/mongoose";
 import Wishlist from "@/models/Wishlist";
 import User from "@/models/User";
+import { wishListSchema } from "@/app/validation/schemas";
 
 /**
  * @desc Create a new wishlist
@@ -30,17 +31,13 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { title, theme, visibility } = body;
 
-    if (!title) {
-      return new Response(JSON.stringify({ error: "Title is required" }), { 
-        status: 400, headers: { "Content-Type": "application/json" } 
-      });
+    const parseResult = wishListSchema.safeParse(body);
+    if (!parseResult.success) {
+      return new Response(
+        JSON.stringify({ error: parseResult.error.errors[0].message }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
-    if (title.length > 10) {
-      return new Response(JSON.stringify({ error: "Title is too long. Maximum length is 10 characters." }), { 
-        status: 400, headers: { "Content-Type": "application/json" } 
-      });
-    }
-    // Check if the wishlist with the same title already exists for the user
     const existingWishlist = await Wishlist.findOne({ user_id: user._id, title });
 
     if (existingWishlist) {

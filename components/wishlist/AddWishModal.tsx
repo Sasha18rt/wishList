@@ -3,6 +3,7 @@
 import { useState, Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import toast from "react-hot-toast";
+import { wishSchema } from "@/app/validation/schemas";
 
 interface AddWishModalProps {
   wishlistId: string;
@@ -20,22 +21,12 @@ export default function AddWishModal({ wishlistId, isOpen, setIsOpen, onWishAdde
   const [loading, setLoading] = useState(false);
 
   const handleAddWish = async () => {
-    if (!name.trim()) {
-      toast.error("Name is required");
+    const result = wishSchema.safeParse({ name, description, price, image_url: imageUrl, product_url: productUrl });
+    if (!result.success) {
+      const errorMessage = result.error.errors[0].message;
+      toast.error(errorMessage);
       return;
     }
-       if (name.length > 10) {
-          toast.error("Title is too long. Maximum length is 10 characters.");
-          return;
-        }
-        if (description.length > 100) {
-          toast.error("description is too long. Maximum length is 100 characters.");
-          return;
-        }
-        if (price.length > 12) {
-          toast.error("price is too big. Maximum length is 12 characters.");
-          return;
-        }
     setLoading(true);
     try {
       const response = await fetch(`/api/wishlists/${wishlistId}/wishes`, {

@@ -3,6 +3,7 @@
 import { useState, useEffect, Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import toast from "react-hot-toast";
+import { wishSchema } from "@/app/validation/schemas";
 
 interface EditWishModalProps {
   wishlistId: string;
@@ -62,49 +63,16 @@ export default function EditWishModal({
     }
   };
 
-  const validateInputs = (): boolean => {
-    let isValid = true;
-    const newErrors: {
-      name?: string;
-      imageUrl?: string;
-      productUrl?: string;
-      price?: string;
-    } = {};
 
-    if (!name.trim()) {
-      newErrors.name = "Name is required.";
-      isValid = false;
-    }
-
-    if (imageUrl && !isValidUrl(imageUrl)) {
-      newErrors.imageUrl = "Please enter a valid image URL.";
-      isValid = false;
-    }
-
-    if (productUrl && !isValidUrl(productUrl)) {
-      newErrors.productUrl = "Please enter a valid product URL.";
-      isValid = false;
-    }
-
-    if (price) {
-      const priceNumber = parseFloat(price);
-      if (isNaN(priceNumber)) {
-        newErrors.price = "Price must be a valid number.";
-        isValid = false;
-      } else if (priceNumber < 0) {
-        newErrors.price = "Price cannot be negative.";
-        isValid = false;
-      }
-    }
-
-    setErrors(newErrors);
-    return isValid;
-  };
 
   const handleUpdateWish = async () => {
-    if (!validateInputs()) return;
-
     try {
+      const result = wishSchema.safeParse({ name, description, price, image_url: imageUrl, product_url: productUrl });
+      if (!result.success) {
+        const errorMessage = result.error.errors[0].message;
+        toast.error(errorMessage);
+        return;
+      }
       setLoading(true);
       const response = await fetch(`/api/wishlists/${wishlistId}/wishes/${wish._id}`, {
         method: "PUT",
@@ -114,7 +82,7 @@ export default function EditWishModal({
           description,
           image_url: imageUrl,
           product_url: productUrl,
-          price: parseFloat(price || "0"),
+          price, // Відправляємо як є, без parseFloat
         }),
       });
       if (!response.ok) throw new Error("Failed to update wish");
@@ -128,6 +96,7 @@ export default function EditWishModal({
       setLoading(false);
     }
   };
+  
 
   const handleDeleteWish = async () => {
     if (!confirm("Are you sure you want to delete this wish?")) return;

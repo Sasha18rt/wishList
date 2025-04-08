@@ -6,7 +6,7 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import toast from "react-hot-toast";
 
 interface UserProfile {
-  _id?: string;
+  id?: string;
   name?: string;
   email?: string;
   image?: string;
@@ -49,10 +49,10 @@ export default function UserProfileModal({ isOpen, onClose, user }: Props) {
   }, [user]);
 
   const handleSave = async () => {
-    if (!user._id) return;
+
     setIsSaving(true);
     try {
-      const res = await fetch(`/api/user/${user._id}`, {
+      const res = await fetch(`/api/user/${user.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -192,15 +192,18 @@ export default function UserProfileModal({ isOpen, onClose, user }: Props) {
                           className="input input-sm input-bordered w-full mb-2"
                           value={instagramHandle}
                           onChange={(e) => setInstagramHandle(e.target.value)}
-                          placeholder="@handle"
+                          placeholder="@Instagram"
                         />
                         <button
                           onClick={handleSave}
+                          
+                          type="button"
                           className="btn btn-success w-full"
                           disabled={isSaving}
                         >
                           {isSaving ? "Saving..." : "Save"}
                         </button>
+                        
                       </>
                     ) : (
                       <button
@@ -209,6 +212,7 @@ export default function UserProfileModal({ isOpen, onClose, user }: Props) {
                       >
                         Edit Profile
                       </button>
+                      
                     )}
                   </div>
                 )}

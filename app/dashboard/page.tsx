@@ -110,6 +110,7 @@ export default function Dashboard() {
               setIsModalOpen={setIsModalOpen}
               onCreated={(newWishlist: any) => {
                 setWishlists((prev) => [newWishlist, ...prev]);
+                
               }}
             />
           </>

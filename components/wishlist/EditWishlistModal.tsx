@@ -3,6 +3,7 @@
 import { useState, Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import toast from "react-hot-toast";
+import { wishListSchema } from "@/app/validation/schemas";
 
 interface EditWishlistModalProps {
   wishlistId: string;
@@ -39,6 +40,11 @@ export default function EditWishlistModal({
 
   const handleUpdate = async () => {
     try {
+      const result = wishListSchema.safeParse({ title });
+      if (!result.success) {
+        toast.error(result.error.errors[0].message);
+        return;
+      }
       setLoading(true);
       const response = await fetch(`/api/wishlists/${wishlistId}`, {
         method: "PUT",
@@ -70,7 +76,6 @@ export default function EditWishlistModal({
 
       toast.success("Wishlist deleted successfully!");
       setIsOpen(false);
-      // Pass a minimal wishlist object indicating deletion
       onUpdate({ _id: wishlistId, title: "", theme: "", visibility: "", created_at: "", deleted: true });
     } catch (err) {
       toast.error((err as Error).message);
@@ -149,8 +154,9 @@ export default function EditWishlistModal({
                     onChange={(e) => setVisibility(e.target.value)}
                     className="select select-bordered w-full"
                   >
-                    <option value="private">Private</option>
                     <option value="public">Public</option>
+                    <option value="private">Private</option>
+
                   </select>
 
                   {/* Buttons */}

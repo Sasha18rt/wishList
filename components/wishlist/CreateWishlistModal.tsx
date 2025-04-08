@@ -1,10 +1,18 @@
 "use client";
 
+import { wishListSchema } from "@/app/validation/schemas";
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment, useState } from "react";
 import toast from "react-hot-toast";
 
-export default function CreateWishlistModal({ isModalOpen, setIsModalOpen }: { isModalOpen: boolean; setIsModalOpen: (open: boolean) => void;  onCreated: (newWishlist: any) => void;  }) {
+export default function CreateWishlistModal({
+  isModalOpen,
+  setIsModalOpen,
+}: {
+  isModalOpen: boolean;
+  setIsModalOpen: (open: boolean) => void;
+  onCreated: (newWishlist: any) => void;
+}) {
   const [title, setTitle] = useState("");
   const [theme, setTheme] = useState("default");
   const [visibility, setVisibility] = useState("private");
@@ -12,8 +20,9 @@ export default function CreateWishlistModal({ isModalOpen, setIsModalOpen }: { i
 
   const handleCreateWishlist = async () => {
 
-    if (title.length > 10) {
-      toast.error("Title is too long. Maximum length is 10 characters.");
+    const result = wishListSchema.safeParse({ title });
+    if (!result.success) {
+      toast.error(result.error.errors[0].message);
       return;
     }
     setLoading(true);
@@ -32,24 +41,24 @@ export default function CreateWishlistModal({ isModalOpen, setIsModalOpen }: { i
 
       toast.success("Wishlist created successfully!");
       setTitle("");
-      setTimeout(() => setIsModalOpen(false), 1500);
+
+      setIsModalOpen(false)
 
     } catch (error) {
-      
       console.error("Error:", error);
       let errorMessage = "Something went wrong!";
 
       if (error.message.includes("This wishlist name is already taken")) {
         toast.error("Name already taken. Try another one!");
       } else {
-         try {
-    const parsedError = JSON.parse(error.message);
-    errorMessage = parsedError.error; 
-  } catch (e) {
-    errorMessage = error.message;
-  }
+        try {
+          const parsedError = JSON.parse(error.message);
+          errorMessage = parsedError.error;
+        } catch (e) {
+          errorMessage = error.message;
+        }
 
-  toast.error(` ${errorMessage}`);
+        toast.error(` ${errorMessage}`);
       }
     } finally {
       setLoading(false);
@@ -58,7 +67,11 @@ export default function CreateWishlistModal({ isModalOpen, setIsModalOpen }: { i
 
   return (
     <Transition appear show={isModalOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={() => setIsModalOpen(false)}>
+      <Dialog
+        as="div"
+        className="relative z-50"
+        onClose={() => setIsModalOpen(false)}
+      >
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -84,8 +97,13 @@ export default function CreateWishlistModal({ isModalOpen, setIsModalOpen }: { i
             >
               <Dialog.Panel className="relative w-full max-w-lg overflow-visible transform text-left align-middle shadow-xl transition-all rounded-xl bg-base-100 p-6 md:p-8">
                 <div className="flex justify-between items-center mb-4">
-                  <Dialog.Title as="h2" className="font-semibold">Create Wishlist</Dialog.Title>
-                  <button className="btn btn-square btn-ghost btn-sm" onClick={() => setIsModalOpen(false)}>
+                  <Dialog.Title as="h2" className="font-semibold">
+                    Create Wishlist
+                  </Dialog.Title>
+                  <button
+                    className="btn btn-square btn-ghost btn-sm"
+                    onClick={() => setIsModalOpen(false)}
+                  >
                     ✕
                   </button>
                 </div>
@@ -99,18 +117,33 @@ export default function CreateWishlistModal({ isModalOpen, setIsModalOpen }: { i
                     onChange={(e) => setTitle(e.target.value)}
                   />
 
-                  <select className="select select-bordered w-full" value={theme} onChange={(e) => setTheme(e.target.value)}>
+                  <select
+                    className="select select-bordered w-full"
+                    value={theme}
+                    onChange={(e) => setTheme(e.target.value)}
+                  >
                     <option value="default">Default</option>
                     <option value="dark">Dark</option>
                     <option value="light">Light</option>
                   </select>
 
-                  <select className="select select-bordered w-full" value={visibility} onChange={(e) => setVisibility(e.target.value)}>
+                  <select
+                    className="select select-bordered w-full"
+                    value={visibility}
+                    onChange={(e) => setVisibility(e.target.value)}
+                  >
                     <option value="private">Private</option>
-                    <option value="public">Public</option>
+
+                    <option value="private">Private</option>
                   </select>
 
-                  <button className={`btn btn-primary w-full ${loading ? "opacity-50 cursor-not-allowed" : ""}`} onClick={handleCreateWishlist} disabled={loading}>
+                  <button
+                    className={`btn btn-primary w-full ${
+                      loading ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                    onClick={handleCreateWishlist}
+                    disabled={loading}
+                  >
                     {loading ? "Creating..." : "Create Wishlist"}
                   </button>
                 </div>

@@ -71,9 +71,11 @@ const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
 const handleShowUserInfo = async (userId: string) => {
   try {
+    
     const res = await fetch(`/api/user/${userId}`);
     if (!res.ok) throw new Error("Failed to load user info");
     const user = await res.json();
+    console.log(user)
     setSelectedUser(user);
     setIsUserModalOpen(true);
   } catch (err) {
@@ -167,9 +169,10 @@ const handleShowUserInfo = async (userId: string) => {
         body: JSON.stringify({ wishlistId, wishId }),
       });
       if (!res.ok) {
-        const msg = await res.text();
-        throw new Error(msg || "Failed to reserve wish");
+        const data = await res.json();
+        throw new Error(data.error || "Failed to reserve wish");
       }
+      
       toast.success("Gift reserved!");
       if (wishlist) {
         setWishlist({
@@ -299,39 +302,56 @@ const handleShowUserInfo = async (userId: string) => {
                 Added: {new Date(wish.added_at).toLocaleDateString()}
               </p>
               {isReserved ? (
-                isOwner ? (
-                  <p className="text-success font-semibold">Reserved</p>
-                ) : (
-                  <p className="text-success font-semibold">
-                  Reserved by{" "}
-                  <button
-                    className="underline underline-offset-2 hover:text-primary"
-                    onClick={() => {
-                      const reservation = wishlist?.reservations?.find(
-                        (r) => r.wish_id.toString() === wish._id.toString()
-                      );
-                      if (reservation?.user_id) {
-                        handleShowUserInfo(reservation.user_id);
-                      }
-                    }}
-                  >
-                    {reservationUsers[wish._id] || "someone"}
-                  </button>
-                </p>
-                
-                
-                
-                )
-              ) : isOwner ? (
-                <p className="text-gray-500">Not reserved</p>
-              ) : (
-                <button
-                  className="btn btn-sm btn-primary"
-                  onClick={() => handleReserve(wish._id)}
-                >
-                  Reserve this gift
-                </button>
-              )}
+  session ? (
+    isOwner ? (
+      <p className="text-success font-semibold">Reserved</p>
+    ) : (
+      <p className="text-success font-semibold">
+        Reserved by{" "}
+        <button
+         className="underline underline-offset-2 hover:text-info transition"  onClick={() => {
+            const reservation = wishlist?.reservations?.find(
+              (r) => r.wish_id.toString() === wish._id.toString()
+            );
+            if (reservation?.user_id) {
+              handleShowUserInfo(reservation.user_id);
+            }
+          }}
+        >
+          {reservationUsers[wish._id] ||        <span className="loading loading-spinner loading-xs"></span>
+          }
+        </button>
+      </p>
+    )
+  ) : (
+    <div className="flex flex-col items-start">
+<p className="text-success font-semibold flex items-center gap-1">
+  Reserved
+  <div className="tooltip h-4 w-4 text-gray-400 hover:text-info  transition"
+ data-tip="Log in to see who reserved">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-4 w-4 text-gray-400 hover:text-info transition"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
+    </svg>
+  </div>
+</p>
+
+
+    </div>
+  )
+) : isOwner ? (
+  <p className="text-gray-500">Not reserved</p>
+) : (
+  <button className="btn btn-sm btn-primary" onClick={() => handleReserve(wish._id)}>
+    Reserve this gift
+  </button>
+)}
+
               {isOwner && (
                 <button
                   className="btn btn-sm btn-primary mt-2"
