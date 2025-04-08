@@ -16,7 +16,7 @@ export default function CreateWishlistModal({
 }) {
   const [title, setTitle] = useState("");
   const [theme, setTheme] = useState("default");
-  const [visibility, setVisibility] = useState("private");
+  const [visibility, setVisibility] = useState("public");
   const [loading, setLoading] = useState(false);
 
   const handleCreateWishlist = async () => {
@@ -34,19 +34,18 @@ export default function CreateWishlistModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, theme, visibility }),
       });
-      
+      const newWishlist = await response.json();
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(errorText || "Failed to create wishlist");
       }
-      
-      const newWishlist = await response.json(); 
-      onCreated(newWishlist); 
-      
+
       toast.success("Wishlist created successfully!");
       setTitle("");
-      setIsModalOpen(false);
-      
+      onCreated(newWishlist);
+
+      setIsModalOpen(false)
 
     } catch (error) {
       console.error("Error:", error);
@@ -136,7 +135,7 @@ export default function CreateWishlistModal({
                     value={visibility}
                     onChange={(e) => setVisibility(e.target.value)}
                   >
-                    <option value="private">Private</option>
+                    <option value="public">Public</option>
 
                     <option value="private">Private</option>
                   </select>
