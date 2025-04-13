@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { signIn, signOut } from "next-auth/react";
 import { Settings, Plus } from "lucide-react";
 import config from "@/config";
 import logo from "@/app/icon.png";
@@ -12,7 +11,7 @@ interface Props {
   session: any;
   onEditWishlist: () => void;
   onAddWish: () => void;
-  onShowUserProfile: () => void;
+  userMenu?: React.ReactNode; 
 }
 
 const WishlistHeader = ({
@@ -20,7 +19,7 @@ const WishlistHeader = ({
   session,
   onEditWishlist,
   onAddWish,
-  onShowUserProfile,
+  userMenu, 
 }: Props) => {
   return (
     <div className="navbar">
@@ -38,68 +37,28 @@ const WishlistHeader = ({
       </div>
 
       <div className="flex-none">
-        {isOwner ? (
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={onEditWishlist}
-              className="btn btn-ghost btn-circle"
-              aria-label="Edit wishlist"
-            >
-              <Settings className="w-6 h-6" />
-            </button>
-            <button
-              onClick={onAddWish}
-              className="btn btn-ghost btn-circle"
-              aria-label="Add wish"
-            >
-              <Plus className="w-6 h-6" />
-            </button>
-            <div className="dropdown dropdown-end">
-              <div
-                tabIndex={0}
-                role="button"
-                className="btn btn-ghost btn-circle avatar"
+        <div className="flex items-center space-x-2">
+          {isOwner && (
+            <>
+              <button
+                onClick={onEditWishlist}
+                className="btn btn-ghost btn-circle"
+                aria-label="Edit wishlist"
               >
-                <div className="w-10 rounded-full">
-                  <img
-                    src={session.user.image}
-                    alt={session.user.name}
-                  />
-                </div>
-              </div>
-               <ul tabIndex={0} className="menu menu-sm dropdown-content bg-base-100 rounded-box mt-3 w-52 p-2 shadow">
-    <li><a href="/dashboard">My wishlists</a></li>
-    <li><button onClick={onShowUserProfile}>Profile</button></li>
-    <li><button onClick={() => signOut()}>Logout</button></li>
-  </ul>
-            </div>
-          </div>
-        ) : (
-          <div className="dropdown dropdown-end">
-            {session?.user ? (
-              <>
-                <div
-                  tabIndex={0}
-                  role="button"
-                  className="btn btn-ghost btn-circle avatar"
-                >
-                  <div className="w-10 rounded-full">
-                    <img src={session.user.image} alt={session.user.name} />
-                  </div>
-                </div>
-                <ul tabIndex={0} className="menu menu-sm dropdown-content bg-base-100 rounded-box mt-3 w-52 p-2 shadow">
-                  <li><a href="/dashboard">My wishlists</a></li>
-                  <li><button onClick={onShowUserProfile}>Profile</button></li>
-                  <li><button onClick={() => signOut()}>Logout</button></li>
-                </ul>
-              </>
-            ) : (
-              <button onClick={() => signIn()} className="btn btn-primary">
-                Sign in
+                <Settings className="w-6 h-6" />
               </button>
-            )}
-          </div>
-        )}
+              <button
+                onClick={onAddWish}
+                className="btn btn-ghost btn-circle"
+                aria-label="Add wish"
+              >
+                <Plus className="w-6 h-6" />
+              </button>
+            </>
+          )}
+
+          {userMenu}
+        </div>
       </div>
     </div>
   );

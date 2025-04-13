@@ -51,7 +51,7 @@ export async function GET(
       const plainWish = wish.toObject();
       return {
         ...plainWish,
-        price: plainWish.price?.toString() ?? "", 
+        price: plainWish.price?.toString() ?? "",
       };
     });
 
@@ -68,79 +68,60 @@ export async function GET(
   }
 }
 
-/**
- * @desc Add a new wish to a wishlist
- * @route POST /api/wishlists/:id/wishes
- * @access Private
- */
 export async function POST(
   req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
     await connectMongo();
+
     const session = await getServerSession(authOptions);
-    if (!session) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
-      );
-    }
+    if (!session)
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     const user = await User.findOne({ email: session.user.email });
-    if (!user) {
-      return new Response(
-        JSON.stringify({ error: "User not found" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
-    }
+    if (!user)
+      return Response.json({ error: "User not found" }, { status: 404 });
 
     const wishlist = await Wishlist.findOne({
       _id: params.id,
       user_id: user._id,
     });
-    if (!wishlist) {
-      return new Response(
-        JSON.stringify({ error: "Wishlist not found" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
-    }
+    if (!wishlist)
+      return Response.json({ error: "Wishlist not found" }, { status: 404 });
 
     const data = await req.json();
+    console.log("data:", data);
 
     const parsed = wishSchema.safeParse(data);
-    if (!parsed.success) {
-      const errorMessage = parsed.error.errors[0].message;
-      return new Response(
-        JSON.stringify({ error: errorMessage }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
 
-    const { name, description, image_url, product_url, price } = parsed.data;
-    const normalizedPrice = price === "" ? null : price;
+    const {
+      name,
+      description,
+      image_url,
+      image_public_id,
+      product_url,
+      price,
+    } = parsed.data;
 
     const newWish = {
       name,
       description,
-      image_url,
+      image_url: image_url || null,
+      image_public_id: image_public_id || null,
       product_url,
-      price: normalizedPrice,
+      price: price === "" ? null : price,
       added_at: new Date(),
     };
+
+    console.log("newWish:", newWish);
 
     wishlist.wishes.push(newWish);
     await wishlist.save();
 
-    return new Response(
-      JSON.stringify(newWish),
-      { status: 201, headers: { "Content-Type": "application/json" } }
-    );
+    return Response.json(newWish, { status: 201 });
   } catch (error) {
     console.error("Error creating wish:", error);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -18,7 +18,6 @@ const Header = () => {
   const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
-
   useEffect(() => {
     setIsOpen(false);
   }, [searchParams]);
@@ -52,7 +51,6 @@ const Header = () => {
         className="container flex items-center justify-between px-8 py-4 mx-auto"
         aria-label="Global"
       >
-
         <div className="flex lg:flex-1">
           <Link
             className="flex items-center gap-2 shrink-0"

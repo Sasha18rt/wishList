@@ -11,6 +11,7 @@ import AddWishModal from "@/components/wishlist/AddWishModal";
 import ShowMoreButton from "@/components/wishlist/ShowMoreButton";
 import UserProfileModal from "@/components/user/UserProfileModal";
 import WishlistHeader from "@/components/wishlist/WishListHeader";
+import UserMenu from "@/components/user/UserMenu";
 
 interface Wish {
   deleted: any;
@@ -119,14 +120,13 @@ const handleShowUserInfo = async (userId: string) => {
     }
   };
 
-  // Update the global theme on <html> based on wishlist.theme
   useEffect(() => {
-    if (wishlist?.theme) {
-      document.documentElement.setAttribute("data-theme", wishlist.theme);
-    } else {
-      document.documentElement.setAttribute("data-theme", "default");
-    }
+    document.documentElement.setAttribute(
+      "data-theme",
+      wishlist?.theme || "default"
+    );
   }, [wishlist?.theme]);
+  
 
   // Function to fetch reservation user info for a given wish ID using your API
   async function fetchReservationUser(wishId: string) {
@@ -145,20 +145,22 @@ const handleShowUserInfo = async (userId: string) => {
 
   // Loop through wishlist.reservations and fetch the reserved user for each wish
   useEffect(() => {
-    async function fetchAllReservationUsers() {
-      if (wishlist && wishlist.reservations) {
-        const newReservationUsers: Record<string, string> = {};
-        for (const res of wishlist.reservations) {
-          const user = await fetchReservationUser(res.wish_id);
-          if (user) {
-            newReservationUsers[res.wish_id] = user.name || user.email;
-          }
-        }
-        setReservationUsers(newReservationUsers);
-      }
-    }
+    const fetchAllReservationUsers = async () => {
+      if (!wishlist?.reservations) return;
+  
+      const promises = wishlist.reservations.map(async (res) => {
+        const user = await fetchReservationUser(res.wish_id);
+        return user ? { [res.wish_id]: user.name || user.email } : null;
+      });
+  
+      const results = await Promise.all(promises);
+      const merged = results.reduce((acc, item) => (item ? { ...acc, ...item } : acc), {});
+      setReservationUsers(merged);
+    };
+  
     fetchAllReservationUsers();
   }, [wishlist]);
+  
 
   // Handle reservation for a wish
   const handleReserve = async (wishId: string) => {
@@ -237,8 +239,9 @@ const handleShowUserInfo = async (userId: string) => {
   session={session}
   onEditWishlist={() => setIsWishlistModalOpen(true)}
   onAddWish={() => setIsAddModalOpen(true)}
-  onShowUserProfile={() => handleShowUserInfo(session.user.id)}
+  userMenu={<UserMenu />}
 />
+
 
       {/* Wishlist Owner Info */}
       {wishlist && (
@@ -309,48 +312,55 @@ const handleShowUserInfo = async (userId: string) => {
       <p className="text-success font-semibold">
         Reserved by{" "}
         <button
-         className="underline underline-offset-2 hover:text-info transition"  onClick={() => {
+          className="underline underline-offset-2 hover:text-info transition"
+          onClick={() => {
             const reservation = wishlist?.reservations?.find(
-              (r) => r.wish_id.toString() === wish._id.toString()
+              (r) => r.wish_id === wish._id
             );
-            if (reservation?.user_id) {
-              handleShowUserInfo(reservation.user_id);
-            }
+            if (reservation?.user_id) handleShowUserInfo(reservation.user_id);
           }}
         >
-          {reservationUsers[wish._id] ||        <span className="loading loading-spinner loading-xs"></span>
-          }
+          {reservationUsers[wish._id] || (
+            <span className="loading loading-spinner loading-xs" />
+          )}
         </button>
       </p>
     )
   ) : (
-    <div className="flex flex-col items-start">
-<p className="text-success font-semibold flex items-center gap-1">
-  Reserved
-  <div className="tooltip h-4 w-4 text-gray-400 hover:text-info  transition"
- data-tip="Log in to see who reserved">
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4 text-gray-400 hover:text-info transition"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
-    </svg>
-  </div>
-</p>
-
-
+    <div className="flex items-start text-success font-semibold gap-1">
+      Reserved
+      <div
+        className="tooltip h-4 w-4 text-gray-400 hover:text-info transition"
+        data-tip="Log in to see who reserved"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"
+          />
+        </svg>
+      </div>
     </div>
   )
 ) : isOwner ? (
   <p className="text-gray-500">Not reserved</p>
 ) : (
-  <button className="btn btn-sm btn-primary" onClick={() => handleReserve(wish._id)}>
+  <button
+    className="btn btn-sm btn-primary"
+    onClick={() => handleReserve(wish._id)}
+  >
     Reserve this gift
   </button>
 )}
+
 
               {isOwner && (
                 <button

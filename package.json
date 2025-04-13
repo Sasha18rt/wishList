@@ -17,6 +17,7 @@
     "@mdx-js/react": "^2.3.0",
     "@next/mdx": "^13.4.19",
     "axios": "^1.4.0",
+    "cloudinary": "^2.6.0",
     "crisp-sdk-web": "^1.0.21",
     "css-selector-tokenizer": "^0.8.0",
     "eslint": "8.47.0",

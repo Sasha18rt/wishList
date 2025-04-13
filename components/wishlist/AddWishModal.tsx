@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useRef, useState, Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import toast from "react-hot-toast";
 import { wishSchema } from "@/app/validation/schemas";
@@ -12,23 +12,69 @@ interface AddWishModalProps {
   onWishAdded: () => void;
 }
 
-export default function AddWishModal({ wishlistId, isOpen, setIsOpen, onWishAdded }: AddWishModalProps) {
+// Upload image via backend API
+async function handleUploadImage(file: File): Promise<{ imageUrl: string; image_public_id: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch("/api/upload-image", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    throw new Error("Image upload failed");
+  }
+
+  const data = await res.json();
+  return {
+    imageUrl: data.imageUrl,
+    image_public_id: data.image_public_id,
+  };
+}
+
+export default function AddWishModal({
+  wishlistId,
+  isOpen,
+  setIsOpen,
+  onWishAdded,
+}: AddWishModalProps) {
+  const dropRef = useRef<HTMLLabelElement | null>(null);
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageimage_public_id, setImageimage_public_id] = useState<string | null>(null);
   const [productUrl, setProductUrl] = useState("");
   const [price, setPrice] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleAddWish = async () => {
-    const result = wishSchema.safeParse({ name, description, price, image_url: imageUrl, product_url: productUrl });
+    const result = wishSchema.safeParse({
+      name,
+      description,
+      price,
+      image_url: "", 
+      product_url: productUrl,
+      image_public_id: "", 
+    });
+
     if (!result.success) {
       const errorMessage = result.error.errors[0].message;
       toast.error(errorMessage);
       return;
     }
+
+    if (!imageFile) {
+      toast.error("Please upload an image");
+      return;
+    }
+
     setLoading(true);
     try {
+      const { imageUrl,  image_public_id } = await handleUploadImage(imageFile);
+      setImageimage_public_id(image_public_id);
+
       const response = await fetch(`/api/wishlists/${wishlistId}/wishes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -36,6 +82,7 @@ export default function AddWishModal({ wishlistId, isOpen, setIsOpen, onWishAdde
           name,
           description,
           image_url: imageUrl,
+          image_public_id: image_public_id,
           product_url: productUrl,
           price,
         }),
@@ -47,9 +94,11 @@ export default function AddWishModal({ wishlistId, isOpen, setIsOpen, onWishAdde
       setIsOpen(false);
       onWishAdded();
 
+      // Reset form
       setName("");
       setDescription("");
-      setImageUrl("");
+      setImageFile(null);
+      setImageimage_public_id(null);
       setProductUrl("");
       setPrice("");
     } catch (err) {
@@ -90,8 +139,16 @@ export default function AddWishModal({ wishlistId, isOpen, setIsOpen, onWishAdde
                   <Dialog.Title as="h2" className="font-semibold text-xl">
                     Add New Wish
                   </Dialog.Title>
-                  <button className="btn btn-square btn-ghost btn-sm" onClick={() => setIsOpen(false)}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6">
+                  <button
+                    className="btn btn-square btn-ghost btn-sm"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      className="w-6 h-6"
+                    >
                       <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
                     </svg>
                   </button>
@@ -105,19 +162,66 @@ export default function AddWishModal({ wishlistId, isOpen, setIsOpen, onWishAdde
                     className="input input-bordered w-full"
                     placeholder="Name*"
                   />
+
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     className="textarea textarea-bordered w-full"
                     placeholder="Description (optional)"
                   />
-                  <input
-                    type="url"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    className="input input-bordered w-full"
-                    placeholder="Image URL (optional)"
-                  />
+
+                  {/* Upload only (with drag & drop) */}
+                  <div className="flex flex-col gap-3">
+                    <label
+                      ref={dropRef}
+                      htmlFor="imageUpload"
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const file = e.dataTransfer.files?.[0];
+                        if (file?.type.startsWith("image/")) {
+                          setImageFile(file);
+                        } else {
+                          toast.error("Only image files allowed");
+                        }
+                      }}
+                      className="w-full border-2 border-dashed border-base-content/20 rounded-xl cursor-pointer p-4 text-center hover:border-primary transition"
+                    >
+                      {imageFile ? (
+                        <img
+                          src={URL.createObjectURL(imageFile)}
+                          alt="Preview"
+                          className="w-full h-40 object-cover rounded-md"
+                        />
+                      ) : (
+                        <span className="text-sm opacity-60">
+                          Drag & drop or click to upload image
+                        </span>
+                      )}
+                    </label>
+
+                    <input
+                      id="imageUpload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                    />
+
+                    {imageFile && (
+                      <button
+                        type="button"
+                        className="btn btn-xs btn-outline btn-error w-fit"
+                        onClick={() => {
+                          setImageFile(null);
+                          setImageimage_public_id(null);
+                        }}
+                      >
+                        Remove image
+                      </button>
+                    )}
+                  </div>
+
                   <input
                     type="url"
                     value={productUrl}
@@ -125,6 +229,7 @@ export default function AddWishModal({ wishlistId, isOpen, setIsOpen, onWishAdde
                     className="input input-bordered w-full"
                     placeholder="Product URL (optional)"
                   />
+
                   <input
                     type="number"
                     step="0.1"
@@ -134,7 +239,11 @@ export default function AddWishModal({ wishlistId, isOpen, setIsOpen, onWishAdde
                     placeholder="Price (optional)"
                   />
 
-                  <button onClick={handleAddWish} className="btn btn-primary w-full" disabled={loading}>
+                  <button
+                    onClick={handleAddWish}
+                    className="btn btn-primary w-full"
+                    disabled={loading}
+                  >
                     {loading ? "Adding..." : "Add Wish"}
                   </button>
                 </div>

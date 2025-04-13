@@ -4,6 +4,7 @@ const wishSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: { type: String },
   image_url: { type: String },
+  image_public_id: { type: String },
   product_url: { type: String },
   price: { type: String }, 
   added_at: { type: Date, default: Date.now },
