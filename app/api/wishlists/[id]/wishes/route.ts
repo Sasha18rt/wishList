@@ -6,8 +6,10 @@ import User from "@/models/User";
 import { wishListSchema, wishSchema } from "@/app/validation/schemas";
 
 export async function GET(
+  req: Request,
   { params }: { params: { id: string } }
-) {
+)
+ {
   if (!params.id) {
     return new Response(JSON.stringify({ error: "Missing wishlist I3D" }), {
       status: 400,
