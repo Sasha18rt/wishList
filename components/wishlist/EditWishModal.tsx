@@ -242,8 +242,9 @@ export default function EditWishModal({
                     placeholder="Price (optional)"
                   />
                   <div className="flex gap-4">
-                    <button onClick={handleDeleteWish} className="btn btn-error w-1/2">
-                      Delete
+                    <button onClick={handleDeleteWish} className="btn btn-error w-1/2"disabled={loading}>
+                    {loading ? "Saving..." : "Delete"}
+
                     </button>
                     <button onClick={handleUpdateWish} className="btn btn-success w-1/2" disabled={loading}>
                       {loading ? "Saving..." : "Update"}

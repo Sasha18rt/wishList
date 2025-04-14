@@ -52,7 +52,6 @@ export async function POST(req: Request) {
       );
       stream.pipe(cloudStream);
     });
-    console.log("Cloudinary upload result:", uploadResult.public_id);
 
     return NextResponse.json({
       imageUrl: uploadResult.secure_url,

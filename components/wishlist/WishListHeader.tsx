@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Settings, Plus } from "lucide-react";
 import config from "@/config";
 import logo from "@/app/icon.png";
-
+import React from "react";
 interface Props {
   isOwner: boolean;
   session: any;
@@ -16,7 +16,6 @@ interface Props {
 
 const WishlistHeader = ({
   isOwner,
-  session,
   onEditWishlist,
   onAddWish,
   userMenu, 

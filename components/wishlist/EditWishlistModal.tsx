@@ -161,8 +161,9 @@ export default function EditWishlistModal({
 
                   {/* Buttons */}
                   <div className="flex gap-1">
-                    <button onClick={handleDelete} className="btn btn-error w-1/2">
-                      Delete
+                    <button onClick={handleDelete} className="btn btn-error w-1/2" disabled={loading}>
+                                            {loading ? "Saving..." : "Delete"}
+
                     </button>
                     <button onClick={handleUpdate} className="btn btn-success w-1/2" disabled={loading}>
                       {loading ? "Saving..." : "Update"}

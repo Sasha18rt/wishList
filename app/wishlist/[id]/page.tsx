@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import toast from "react-hot-toast";
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import EditWishlistModal from "@/components/wishlist/EditWishlistModal";
 import EditWishModal from "@/components/wishlist/EditWishModal";
 import AddWishModal from "@/components/wishlist/AddWishModal";
@@ -76,7 +76,6 @@ const handleShowUserInfo = async (userId: string) => {
     const res = await fetch(`/api/user/${userId}`);
     if (!res.ok) throw new Error("Failed to load user info");
     const user = await res.json();
-    console.log(user)
     setSelectedUser(user);
     setIsUserModalOpen(true);
   } catch (err) {

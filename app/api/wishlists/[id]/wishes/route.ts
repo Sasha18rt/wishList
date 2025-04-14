@@ -6,7 +6,6 @@ import User from "@/models/User";
 import { wishListSchema, wishSchema } from "@/app/validation/schemas";
 
 export async function GET(
-  req: Request,
   { params }: { params: { id: string } }
 ) {
   if (!params.id) {
@@ -91,7 +90,6 @@ export async function POST(
       return Response.json({ error: "Wishlist not found" }, { status: 404 });
 
     const data = await req.json();
-    console.log("data:", data);
 
     const parsed = wishSchema.safeParse(data);
 
@@ -114,7 +112,6 @@ export async function POST(
       added_at: new Date(),
     };
 
-    console.log("newWish:", newWish);
 
     wishlist.wishes.push(newWish);
     await wishlist.save();
