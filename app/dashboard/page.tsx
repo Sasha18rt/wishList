@@ -9,7 +9,9 @@ import { Share2 } from "lucide-react";
 export default function Dashboard() {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedWishlistId, setSelectedWishlistId] = useState<string | null>(null);
+  const [selectedWishlistId, setSelectedWishlistId] = useState<string | null>(
+    null
+  );
   const [wishlist, setWishlist] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +56,7 @@ export default function Dashboard() {
     <main className="min-h-screen p-8 pb-24">
       <section className="max-w-xl mx-auto space-y-8">
         <h1 className="text-3xl md:text-4xl font-extrabold">Dashboard</h1>
-        
+
         {selectedWishlistId ? (
           <>
             <div className="flex flex-wrap gap-4">
@@ -106,11 +108,11 @@ export default function Dashboard() {
             </button>
 
             <CreateWishlistModal
-  isModalOpen={isModalOpen}
-  setIsModalOpen={setIsModalOpen}
-  onCreated={(newWishlist: any) => {
-    setWishlists((prev) => [newWishlist, ...prev]); 
-  }}
+              isModalOpen={isModalOpen}
+              setIsModalOpen={setIsModalOpen}
+              onCreated={(newWishlist: any) => {
+                setWishlists((prev) => [newWishlist, ...prev]);
+              }}
             />
           </>
         )}
