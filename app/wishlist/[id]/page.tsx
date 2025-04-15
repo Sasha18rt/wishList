@@ -220,9 +220,10 @@ const handleShowUserInfo = async (userId: string) => {
 
   if (loading)
     return (
-      <p className="text-center text-lg">
-        <span className="loading loading-spinner loading-xl"></span>
-      </p>
+      <div className="h-screen w-full flex items-center justify-center">
+      <span className="loading loading-spinner loading-xl"></span>
+    </div>
+    
     );
 
   if (error) return <p className="text-center text-lg text-error">{error}</p>;

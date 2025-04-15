@@ -86,7 +86,7 @@ const config = {
     forwardRepliesTo: "sasharotaenko1@gmail.com",
   },
   colors: {
-    theme: "light",
+    theme: "",
     main: themes[`[data-theme=light]`]["primary"],
   },
   

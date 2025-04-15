@@ -16,8 +16,10 @@
     "@mdx-js/loader": "^2.3.0",
     "@mdx-js/react": "^2.3.0",
     "@next/mdx": "^13.4.19",
+    "@react-spring/web": "^9.5.5",
     "axios": "^1.4.0",
     "cloudinary": "^2.6.0",
+    "clsx": "^2.1.1",
     "crisp-sdk-web": "^1.0.21",
     "css-selector-tokenizer": "^0.8.0",
     "eslint": "8.47.0",
@@ -36,7 +38,9 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-hot-toast": "^2.4.1",
+    "react-swipeable": "^7.0.2",
     "react-syntax-highlighter": "^5.8.0",
+    "react-tinder-card": "^1.6.4",
     "react-tooltip": "^5.21.1",
     "stripe": "^13.2.0",
     "zod": "^3.22.2"
@@ -59,5 +63,6 @@
     "postcss": "^8.4.28",
     "tailwindcss": "^3.3.3",
     "typescript": "^5.2.2"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

@@ -20,3 +20,7 @@ progress::-webkit-progress-value {
     @apply !capitalize;
   }
 }
+/* globals.css or any imported .css */
+.active-cursor:active {
+  cursor: url('/drag.png') 16 16, grabbing;
+}
