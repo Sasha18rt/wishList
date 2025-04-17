@@ -23,23 +23,29 @@ const WishlistHeader = ({
   onAddWish,
   userMenu,
 }: Props) => {
-  // Handles native or fallback share
-  const handleShare = () => {
+  const handleShare = async () => {
     const url = window.location.href;
-
-    if (navigator.share) {
-      navigator
-        .share({
+  
+    if (navigator.share && window.innerWidth < 768) {
+      try {
+        await navigator.share({
           title: "Check out this wishlist!",
           text: "Take a look at this wishlist I made 🎁",
           url,
-        })
-        .catch((err) => console.error("Sharing failed:", err));
+        });
+      } catch (err) {
+        toast.error("Sharing canceled or failed.");
+      }
     } else {
-      navigator.clipboard.writeText(url);
-      toast.success("Link copied to clipboard!");
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied to clipboard!");
+      } catch {
+        toast.error("Failed to copy link.");
+      }
     }
   };
+  
 
   return (
     <div className="navbar">
