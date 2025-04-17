@@ -7,9 +7,13 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
     await connectMongo();
-    const wishlist = await Wishlist.findById(params.id).lean();
-  
-    const title = wishlist?.title || "Wishlist on Wishlify";
+    interface WishlistLean {
+        title: string;
+      }
+      
+      const wishlist = await Wishlist.findById(params.id).lean<WishlistLean>();
+      const title = wishlist?.title || "Wishlist on Wishlify";
+      
   
     return {
       title,

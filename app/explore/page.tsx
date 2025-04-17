@@ -30,7 +30,7 @@ export default function ExploreGiftsTinder() {
     if (window.location.hash === "#scroll") {
       if (window.innerWidth < 768) {
         setTimeout(() => {
-          window.scrollBy({ top: 40, behavior: "smooth" });
+          window.scrollBy({ top: 50, behavior: "smooth" });
         }, 200);
       }
     }

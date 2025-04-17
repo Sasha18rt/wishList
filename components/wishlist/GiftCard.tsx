@@ -29,7 +29,7 @@ const GiftCard: React.FC<GiftCardProps> = ({ gift, swipeInfo }) => {
     <div
     className={clsx(
       "relative card bg-base-100 shadow-xl mx-auto select-none touch-none active-cursor",
-"w-full max-w-[365px] sm:max-w-md md:max-w-lg lg:max-w-2xl",
+      "w-[95vw] max-w-[365px]",
       "transition-transform duration-300 hover:scale-[1.03]",
       hoverDir === "left" && "hover:-rotate-2",
       hoverDir === "right" && "hover:rotate-2",
@@ -37,6 +37,7 @@ const GiftCard: React.FC<GiftCardProps> = ({ gift, swipeInfo }) => {
       "border border-gray-300 sm:border-0",
       "cursor-pointer sm:cursor-default"
     )}
+  
   
     
       
@@ -58,22 +59,21 @@ const GiftCard: React.FC<GiftCardProps> = ({ gift, swipeInfo }) => {
         </div>
       )}
 
-      {gift.image_url ? (
-        <figure className="h-[100%]">
-          <img
-            src={gift.image_url}
-            alt={gift.name}
-            className="object-cover w-full h-full"
-            draggable={false}
-          />
-        </figure>
-      ) : (
-        <div className="h-[52%] flex items-center justify-center bg-gray-200 text-gray-500">
-          No image
-        </div>
-      )}
+<figure className="h-[60%] w-full flex items-center justify-center bg-gray-100">
+  {gift.image_url ? (
+    <img
+      src={gift.image_url}
+      alt={gift.name}
+      className="object-cover w-full h-full"
+      draggable={false}
+    />
+  ) : (
+    <span className="text-gray-400 text-sm">No image available</span>
+  )}
+</figure>
 
-      <div className="card-body h-[48%] p-5 pt-4 flex flex-col justify-between">
+
+<div className="card-body h-[40%] min-h-[230px] p-5 pt-4 flex flex-col justify-between">
         <div>
           <h2 className="card-title text-lg font-bold">{gift.name}</h2>
 
