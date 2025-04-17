@@ -84,7 +84,7 @@ export default function Dashboard() {
                 onClick={() => router.push(`/wishlist/${selectedWishlistId}`)}
               >
                 <Share2 className="w-5 h-5" />
-                <span>Share Your Wishlist</span>
+                <span>Open Wishlist</span>
               </button>
             </div>
 
