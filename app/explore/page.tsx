@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import Link from "next/link";
 import toast from "react-hot-toast";
 import TinderCard from "react-tinder-card";
 import GiftCard, { Wish } from "@/components/wishlist/GiftCard";
@@ -27,6 +26,18 @@ export default function ExploreGiftsTinder() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
 
+  useEffect(() => {
+    if (window.location.hash === "#scroll") {
+      if (window.innerWidth < 768) {
+        setTimeout(() => {
+          window.scrollBy({ top: 40, behavior: "smooth" });
+        }, 200);
+      }
+    }
+  }, []);
+  
+
+  
   useEffect(() => {
     async function fetchWishes() {
       try {

@@ -27,14 +27,18 @@ const GiftCard: React.FC<GiftCardProps> = ({ gift, swipeInfo }) => {
 
   return (
     <div
-      className={clsx(
-        "relative card bg-base-100 shadow-xl mx-auto select-none touch-none active-cursor",
-       "w-[400px] sm:w-[480px] md:w-[540px] lg:w-[600px]",
-        "transition-transform duration-300 hover:scale-[1.03]",
-        hoverDir === "left" && "hover:-rotate-2",
-        hoverDir === "right" && "hover:rotate-2",
-        "h-[580px] rounded-xl overflow-hidden"
-      )}
+    className={clsx(
+      "relative card bg-base-100 shadow-xl mx-auto select-none touch-none active-cursor",
+"w-full max-w-[365px] sm:max-w-md md:max-w-lg lg:max-w-2xl",
+      "transition-transform duration-300 hover:scale-[1.03]",
+      hoverDir === "left" && "hover:-rotate-2",
+      hoverDir === "right" && "hover:rotate-2",
+      "h-[580px] rounded-xl overflow-hidden",
+      "border border-gray-300 sm:border-0",
+      "cursor-pointer sm:cursor-default"
+    )}
+  
+    
       
       onMouseMove={(e) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -106,6 +110,7 @@ const GiftCard: React.FC<GiftCardProps> = ({ gift, swipeInfo }) => {
             </div>
           )}
         </div>
+        
       </div>
     </div>
   );

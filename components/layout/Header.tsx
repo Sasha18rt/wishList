@@ -34,12 +34,12 @@ const Header = () => {
 
   const links = isAuthenticated
     ? [
-        { href: "/explore", label: "Explore" },
+      { href: "/explore#scroll", label: "Explore" },
         { href: "/dashboard", label: "My Wishlists" },
         { href: "/#faq", label: "FAQ" },
       ]
     : [
-        { href: "/explore", label: "Explore" },
+      { href: "/explore#scroll", label: "Explore" },
         { href: "/#testimonials", label: "Reviews" },
         { href: "/#faq", label: "FAQ" },
       ];
