@@ -4,7 +4,7 @@ export const wishSchema = z.object({
   name: z
     .string()
     .min(1, { message: "Name is required" })
-    .max(15, { message: "Title is too long. Maximum length is 15 characters." }),
+    .max(20, { message: "Title is too long. Maximum length is 20 characters." }),
 
   description: z
     .string()
@@ -49,5 +49,5 @@ export const wishListSchema = z.object({
     title: z
       .string()
       .min(1, { message: "Title is required" })
-      .max(15, { message: "Title is too long. Maximum length is 15 characters." }),
+      .max(20, { message: "Title is too long. Maximum length is 20 characters." }),
   });
