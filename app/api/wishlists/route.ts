@@ -71,7 +71,7 @@ export async function POST(req: Request) {
  * @route GET /api/wishlists
  * @access Private (Authenticated Users)
  */
-export async function GET(req: Request) {
+export async function GET() {
   try {
     await connectMongo();
     const session = await getServerSession(authOptions);
