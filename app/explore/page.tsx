@@ -230,7 +230,6 @@ export default function ExploreGiftsTinder() {
         onSelect={async (wishlistId) => {
           if (!pendingGift) return;
           await addGiftToWishlist(wishlistId, pendingGift);
-          toast.success("Gift added!");
           setPendingGift(null);
         }}
       />
