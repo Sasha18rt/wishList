@@ -24,41 +24,65 @@ export async function POST(req: Request) {
       });
     }
 
-    const { wishlistId, giftId } = await req.json();
+    const body = await req.json();
+    const { wishlistId, gift } = body;
 
-    if (!wishlistId || !giftId) {
-      return new Response(JSON.stringify({ error: "Missing wishlistId or giftId" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    if (!wishlistId || !gift || typeof gift !== "object") {
+      return new Response(
+        JSON.stringify({ error: "Missing or invalid wishlistId or gift" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    const wishlist = await Wishlist.findOne({ _id: wishlistId, user_id: user._id });
-
-    if (!wishlist) {
-      return new Response(JSON.stringify({ error: "Wishlist not found or not yours" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    // Prevent duplicates
-    if (wishlist.items?.includes(giftId)) {
-      return new Response(JSON.stringify({ message: "Gift already added" }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    // Push giftId into items array
-    wishlist.items = [...(wishlist.items || []), giftId];
-    await wishlist.save();
-
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
+    const wishlist = await Wishlist.findOne({
+      _id: wishlistId,
+      user_id: user._id,
     });
 
+    if (!wishlist) {
+      return new Response(
+        JSON.stringify({ error: "Wishlist not found or not yours" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const duplicate = gift.product_url
+    ? wishlist.wishes.some(
+        (w: any) =>
+          w.product_url === gift.product_url ||
+          (gift.image_url && w.image_url === gift.image_url)
+      )
+    : gift.image_url
+    ? wishlist.wishes.some((w: any) => w.image_url === gift.image_url)
+    : false;
+  
+  
+
+    if (duplicate) {
+      return new Response(
+        JSON.stringify({ message: "Gift already exists in wishlist" }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Build gift object to push
+    const newGift = {
+      name: gift.name,
+      description: gift.description || "",
+      image_url: gift.image_url || null,
+      image_public_id: gift.image_public_id || null,
+      product_url: gift.product_url,
+      price: gift.price === "" ? null : gift.price,
+      added_at: new Date(),
+    };
+
+    wishlist.wishes.push(newGift);
+    await wishlist.save();
+
+    return new Response(JSON.stringify(newGift), {
+      status: 201,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("Error adding gift:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
