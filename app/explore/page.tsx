@@ -136,7 +136,7 @@ export default function ExploreGiftsTinder() {
     return (
       <div className="min-h-screen flex items-center justify-center ">
         <p className="text-center">
-          Loading gifts{" "} 
+          Loading gifts{" "}
           <span className="loading loading-spinner loading-xs"></span>
         </p>
       </div>
@@ -146,18 +146,23 @@ export default function ExploreGiftsTinder() {
   if (wishes.length === 0 || currentIndex >= wishes.length)
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-center px-4">
-      <Gift className="w-16 h-16 text-secondary mb-4 animate-bounce" />
-  
-      <h2 className="text-2xl font-semibold mb-2">You're all caught up! 🎉</h2>
-      <p className="text-gray-500 mb-6">You've browsed all the gifts. Come back later for more inspiration!</p>
-  
-      <button
-        className="btn btn-primary"
-        onClick={() => window.location.reload()} 
-      >
-        Refresh List
-      </button>
-    </div>
+        <Gift className="w-16 h-16 text-secondary mb-4 animate-bounce" />
+
+        <h2 className="text-2xl font-semibold mb-2">
+          You&apos;re all caught up! 🎉
+        </h2>
+        <p className="text-gray-500 mb-6">
+          You&apos;ve browsed all the gifts. Come back later for more
+          inspiration!
+        </p>
+
+        <button
+          className="btn btn-primary"
+          onClick={() => window.location.reload()}
+        >
+          Refresh List
+        </button>
+      </div>
     );
 
   return (
