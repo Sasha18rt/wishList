@@ -144,9 +144,11 @@ export default function EditWishlistModal({
                     <option value="default">Default</option>
                     <option value="dark">Dark</option>
                     <option value="light">Light</option>
-                    <option value="forest">Forest</option>
+                    <option value="lofi">Lofi</option>
                     <option value="bumblebee">bumblebee</option>
                     <option value="coffee">Coffee</option>
+                    <option value="autumn">Autumn</option>
+                    <option value="valentine">Valentine</option>
                   </select>
 
                   <select

@@ -52,7 +52,8 @@ const WishlistHeader = ({
             placeholder="blur"
             priority
           />
-          <span className="ml-2">{config.appName}</span>
+          <span className="ml-2 hidden sm:inline">{config.appName}</span>
+
         </Link>
       </div>
 
