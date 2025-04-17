@@ -38,20 +38,29 @@ export async function POST(req: Request) {
     }
     const buffer = Buffer.from(await file.arrayBuffer());
     const stream = Readable.from(buffer);
-
     const uploadResult = await new Promise<{
       secure_url: string;
       public_id: string;
     }>((resolve, reject) => {
       const cloudStream = cloudinary.uploader.upload_stream(
-        { folder: "wishlist_uploads" },
+        {
+          folder: "wishlist_uploads",
+          transformation: [
+            { quality: "auto", fetch_format: "auto" }, 
+          ],
+        },
         (error, result) => {
           if (error || !result) return reject(error);
-          resolve(result);
+          resolve({
+            secure_url: result.secure_url,
+            public_id: result.public_id,
+          });
         }
       );
+    
       stream.pipe(cloudStream);
     });
+    
 
     return NextResponse.json({
       imageUrl: uploadResult.secure_url,
