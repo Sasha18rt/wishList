@@ -59,16 +59,18 @@ export default function ExploreGiftsTinder() {
   const handleSwipe = (direction: string, gift: Wish) => {
     const action = direction === "right" ? "added" : "skipped";
     setSwipeInfo({ id: gift._id, action });
-
+  
     if (direction === "right") {
       handleAddGift(gift);
+      return; 
     }
-
+  
     setTimeout(() => {
       setCurrentIndex((prev) => prev + 1);
       setSwipeInfo(null);
     }, 300);
   };
+  
 
   const handleAddGift = async (gift: Wish) => {
     try {
@@ -88,7 +90,7 @@ export default function ExploreGiftsTinder() {
       }
 
       if (data.length === 1) {
-        await addGiftToWishlist(data[0]._id, gift);
+        await addGiftToWishlist(data[0]._id, gift, childRefs.current[currentIndex]);
         return;
       }
 
@@ -101,26 +103,33 @@ export default function ExploreGiftsTinder() {
     }
   };
 
-  const addGiftToWishlist = async (wishlistId: string, gift: Wish) => {
+  const addGiftToWishlist = async (
+    wishlistId: string,
+    gift: Wish,
+    ref?: React.RefObject<any>
+  ) => {
     const res = await fetch("/api/my-wishlist/add", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ wishlistId, gift }),
     });
-
+  
     const result = await res.json();
-
+  
     if (res.status === 201) {
       toast.success("Gift added!");
+      ref?.current?.swipe("left");
     } else if (
       res.status === 200 &&
       result.message === "Gift already exists in wishlist"
     ) {
       toast.error("Gift already exists in wishlist");
+      ref?.current?.swipe("left");
     } else if (!res.ok) {
       toast.error(result.error || "Something went wrong");
     }
   };
+  
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
