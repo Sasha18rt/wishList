@@ -13,26 +13,54 @@ interface FAQItemProps {
 
 const faqList: FAQItemProps[] = [
   {
-    question: "What do I get exactly?",
-    answer: <div className="space-y-2 leading-relaxed">Loreum Ipseum</div>,
+    question: "What is Wishlify?",
+    answer: (
+      <div className="space-y-2 leading-relaxed">
+        Wishlify is a simple tool to create, manage, and share wishlists. Whether it’s for a birthday, wedding, or personal goals – we make it easy to organize your wishes in one place.
+      </div>
+    ),
   },
   {
-    question: "Can I get a refund?",
+    question: "Do I need to create an account?",
     answer: (
       <p>
-        Yes! You can request a refund within 7 days of your purchase. Reach out
-        by email.
+        You can browse public wishlists without logging in, but to create and save your own wishlist, you’ll need to sign in.
       </p>
     ),
   },
   {
-    question: "I have another question",
+    question: "Can I share my wishlist with friends?",
     answer: (
-      <div className="space-y-2 leading-relaxed">Cool, contact us by email</div>
+      <div className="space-y-2 leading-relaxed">
+        Absolutely! You can share your wishlist via a unique link. On mobile, use the share button to quickly send it via apps like Messenger, WhatsApp, or Email.
+      </div>
+    ),
+  },
+  {
+    question: "Can others add items to my wishlist?",
+    answer: (
+      <div className="space-y-2 leading-relaxed">
+        No – only the wishlist owner can add or edit items. However, friends can reserve items (if enabled), so others know what’s already taken.
+      </div>
+    ),
+  },
+  {
+    question: "Is it free to use?",
+    answer: (
+      <div className="space-y-2 leading-relaxed">
+        Yes! Wishlify is free to use. We may introduce premium features in the future, but basic wishlist creation and sharing will always be free.
+      </div>
+    ),
+  },
+  {
+    question: "What if I have a problem or suggestion?",
+    answer: (
+      <div className="space-y-2 leading-relaxed">
+        You can contact our support via email at <a className="link link-primary" href="mailto:support@wishlify.me">support@wishlify.me</a> – we’re happy to help!
+      </div>
     ),
   },
 ];
-
 
 
 
