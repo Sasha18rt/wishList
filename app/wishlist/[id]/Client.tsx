@@ -76,11 +76,16 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
 const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
 
-const handleShowUserInfo = async (userId: string) => {
+const handleShowUserInfo = async (
+  userId: string,
+  event?: React.MouseEvent<HTMLButtonElement>
+) => {
+  (event?.currentTarget as HTMLButtonElement).blur();
+
   try {
-    
     const res = await fetch(`/api/user/${userId}`);
     if (!res.ok) throw new Error("Failed to load user info");
+
     const user = await res.json();
     setSelectedUser(user);
     setIsUserModalOpen(true);
@@ -215,7 +220,12 @@ const handleShowUserInfo = async (userId: string) => {
     }));
   };
   // Update a wish after editing
-  const handleWishUpdated = (updatedWish: Wish) => {
+  const handleWishUpdated = (
+    updatedWish: Wish,
+    event?: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    (event?.currentTarget as HTMLButtonElement)?.blur(); 
+  
     if (updatedWish.deleted) {
       setWishlist((prev) => ({
         ...prev!,
@@ -229,10 +239,11 @@ const handleShowUserInfo = async (userId: string) => {
         ),
       });
     }
+  
     setIsEditWishModalOpen(false);
     setSelectedWish(null);
   };
-
+  
   if (!wishlistId)
     return <p className="text-center text-lg text-error">Missing ID</p>;
 
@@ -347,11 +358,11 @@ const handleShowUserInfo = async (userId: string) => {
         Reserved by {" "}
         <button
           className="underline underline-offset-2 hover:text-info transition"
-          onClick={() => {
+          onClick={(e) => {
             const reservation = wishlist?.reservations?.find(
               (r) => r.wish_id === wish._id
             );
-            if (reservation?.user_id) handleShowUserInfo(reservation.user_id);
+            if (reservation?.user_id) handleShowUserInfo(reservation.user_id, e);
           }}
         >
           {reservationUsers[wish._id] || (
@@ -399,7 +410,8 @@ const handleShowUserInfo = async (userId: string) => {
               {isOwner && (
                 <button
                   className="btn btn-sm btn-primary mt-2"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.currentTarget.blur();
                     setSelectedWish(wish);
                     setIsEditWishModalOpen(true);
                   }}
