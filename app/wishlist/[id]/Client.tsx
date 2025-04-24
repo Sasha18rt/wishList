@@ -13,6 +13,7 @@ import UserProfileModal from "@/components/user/UserProfileModal";
 import WishlistHeader from "@/components/wishlist/WishListHeader";
 import UserMenu from "@/components/user/UserMenu";
 import clsx from "clsx";
+import React from "react";
 
 
 interface WishlistPageProps {
@@ -80,7 +81,7 @@ const handleShowUserInfo = async (
   userId: string,
   event?: React.MouseEvent<HTMLButtonElement>
 ) => {
-  (event?.currentTarget as HTMLButtonElement).blur();
+  event?.currentTarget?.blur();
 
   try {
     const res = await fetch(`/api/user/${userId}`);
@@ -194,7 +195,7 @@ const handleShowUserInfo = async (
             {
               wishlist_id: wishlist._id,
               wish_id: wishId,
-              user_id: session?.user?.email || "unknown",
+              user_id: session?.user?.email,
               reserved_at: new Date().toISOString(),
             },
           ],
@@ -455,7 +456,7 @@ const handleShowUserInfo = async (
           refreshWishlist();
         }}
       />
-      {isOwner && selectedWish && (
+      {isOwner && selectedWish && isEditWishModalOpen && (
         <EditWishModal
           wishlistId={wishlist!._id}
           wish={selectedWish}
