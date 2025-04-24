@@ -43,10 +43,12 @@ const userSchema = new mongoose.Schema(
     },
     customerId: {
       type: String,
+      required: false,
       validate(value: string) {
-        return value.includes("cus_");
+        return !value || value.includes("cus_");
       },
     },
+    
     priceId: {
       type: String,
       validate(value: string) {

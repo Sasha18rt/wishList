@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import toast from "react-hot-toast";
-import Image from "next/image";
 import UserProfileModal from "@/components/user/UserProfileModal";
-import { LogOut, User, List } from "lucide-react";
+import { LogOut, User, List, Link } from "lucide-react";
 
 export default function UserMenu() {
   const { data: session, status } = useSession();
@@ -68,14 +67,17 @@ export default function UserMenu() {
     </button>
   </li>
   <li>
+  
     <a href="/dashboard" className="flex items-center gap-2">
       <List className="w-4 h-4" />
       My Wishlists
     </a>
-  </li>
+  
+</li>
   <li>
     <button
-      onClick={() => signOut({ callbackUrl: "/" })}
+      onClick= { () => signOut({ redirect: false }).then(() => {
+        toast.success("Logged out")})}
       className="hover:bg-error/20 hover:text-error w-full text-left flex items-center gap-2"
     >
       <LogOut className="w-4 h-4" />

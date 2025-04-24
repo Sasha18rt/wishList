@@ -12,6 +12,7 @@ import ShowMoreButton from "@/components/wishlist/ShowMoreButton";
 import UserProfileModal from "@/components/user/UserProfileModal";
 import WishlistHeader from "@/components/wishlist/WishListHeader";
 import UserMenu from "@/components/user/UserMenu";
+import clsx from "clsx";
 
 
 interface WishlistPageProps {
@@ -200,7 +201,19 @@ const handleShowUserInfo = async (userId: string) => {
       toast.error((err as Error).message);
     }
   };
-
+  const handleCancelReservation = async (wishId: string) => {
+    const res = await fetch(`/api/reservations/${wishId}`, { method: "DELETE" });
+    if (!res.ok) {
+      const body = await res.json();
+      toast.error(body.error || "Failed to cancel");
+      return;
+    }
+    toast.success("Reservation cancelled");
+    setWishlist((w) => ({
+      ...w,
+      reservations: w.reservations?.filter((r) => r.wish_id !== wishId),
+    }));
+  };
   // Update a wish after editing
   const handleWishUpdated = (updatedWish: Wish) => {
     if (updatedWish.deleted) {
@@ -281,11 +294,18 @@ const handleShowUserInfo = async (userId: string) => {
             (r) => r.wish_id.toString() === wish._id.toString()
           );
           const isReserved = Boolean(reservationForWish);
+          const isMine = reservationForWish?.user_id === session?.user?.id;
+         
           return (
             <li
-              key={wish._id}
-              className="border rounded-xl p-4 bg-base-100 shadow-md space-y-2"
-            >
+            
+            key={wish._id}
+            className={clsx(
+              "rounded-xl p-4 bg-base-100 shadow-md space-y-2 transition-all",
+              isMine ? "border-2 border-primary" : "border"
+            )}
+          
+           >
               <h3 className="text-lg font-semibold">{wish.name}</h3>
               {wish.description && <p>{wish.description}</p>}
               {wish.image_url && (
@@ -313,9 +333,18 @@ const handleShowUserInfo = async (userId: string) => {
   session ? (
     isOwner ? (
       <p className="text-success font-semibold">Reserved</p>
+    ) : isMine ? (
+      <div className="mt-2">
+    <button
+      onClick={() => handleCancelReservation(wish._id)}
+      className="btn btn-sm btn-error normal-case"
+    >
+      Cancel reservation
+    </button>
+  </div>
     ) : (
       <p className="text-success font-semibold">
-        Reserved by{" "}
+        Reserved by {" "}
         <button
           className="underline underline-offset-2 hover:text-info transition"
           onClick={() => {
@@ -333,7 +362,7 @@ const handleShowUserInfo = async (userId: string) => {
     )
   ) : (
     <div className="flex items-start text-success font-semibold gap-1">
-      Reserved
+      Reserved by 
       <div
         className="tooltip h-4 w-4 text-gray-400 hover:text-info transition"
         data-tip="Log in to see who reserved"

@@ -17,13 +17,19 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   await connectMongo();
-  const data = await req.json();
 
   try {
+    const data = await req.json();
     const updatedUser = await User.findByIdAndUpdate(params.id, data, { new: true });
+
+    if (!updatedUser) {
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
+    }
+
     return NextResponse.json(updatedUser);
   } catch (error) {
-    return NextResponse.json({ message: 'Error updating user', error }, { status: 500 });
+    console.error("UPDATE USER ERROR", error);
+    return NextResponse.json({ message: "Error updating user", error }, { status: 500 });
   }
 }
 

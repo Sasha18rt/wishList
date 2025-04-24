@@ -7,15 +7,18 @@ import { useSession, signOut } from "next-auth/react";
 import apiClient from "@/libs/api";
 import UserProfileModal from "@/components/user/UserProfileModal";
 import { User } from "lucide-react";
+import toast from "react-hot-toast";        
 
 const ButtonAccount = () => {
   const { data: session, status } = useSession();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  const handleSignOut = () => {
-    signOut({ callbackUrl: "/" });
+  const handleSignOut = async () => {
+    await signOut({ redirect: false });
+    toast.success("Logged out");
   };
+  
 
   const handleBilling = async () => {
     setIsLoading(true);
