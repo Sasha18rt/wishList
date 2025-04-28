@@ -4,7 +4,15 @@ import { useState, useEffect, Fragment, useRef } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import toast from "react-hot-toast";
 import { wishSchema } from "@/app/validation/schemas";
+const ALLOWED_EXT = ['jpg', 'jpeg', 'png', 'gif'];
+const ALLOWED_TYPE = ['image/jpeg', 'image/png', 'image/gif'];
 
+function validateImage(file: { name: string; type: string; }) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!ALLOWED_EXT.includes(ext)) throw new Error('Upload failed: only JPG, PNG, GIF.');
+  if (!ALLOWED_TYPE.includes(file.type)) throw new Error('Upload failed: invalid file type.');
+  return true;
+}
 interface EditWishModalProps {
   wishlistId: string;
   wish: Wish;
@@ -61,6 +69,8 @@ export default function EditWishModal({
       method: "POST",
       body: formData,
     });
+    validateImage(file)
+
     if (!res.ok) throw new Error("Image upload failed");
     const data = await res.json();
     return { imageUrl: data.imageUrl, image_public_id: data.image_public_id };
@@ -72,6 +82,7 @@ export default function EditWishModal({
 
     if (imageFile) {
       try {
+        validateImage(imageFile)
         const uploadResult = await handleUploadImage(imageFile);
         updatedImageUrl = uploadResult.imageUrl;
         updatedImagePublicId = uploadResult.image_public_id;

@@ -68,6 +68,6 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("[UPLOAD_IMAGE]", err);
-    return NextResponse.json({ error: "Image upload failed" }, { status: 500 });
+    return NextResponse.json({ error: "File upload failed. You can only upload photos in JPG, PNG, or GIF formats." }, { status: 500 });
   }
 }
