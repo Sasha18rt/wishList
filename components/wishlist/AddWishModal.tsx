@@ -50,63 +50,63 @@ export default function AddWishModal({
   const [loading, setLoading] = useState(false);
 
   const handleAddWish = async () => {
-    const result = wishSchema.safeParse({
+  setLoading(true);
+
+  try {
+    // 1) Якщо є файл — завантажуємо, якщо ні — лишаємо пусті рядки
+    let imageUrl = "";
+    let image_public_id = "";
+    if (imageFile) {
+      const uploadResult = await handleUploadImage(imageFile);
+      imageUrl = uploadResult.imageUrl;
+      image_public_id = uploadResult.image_public_id;
+    }
+
+    // 2) Формуємо payload з рядками (сама схема очікує string)
+    const payload = {
       name,
       description,
-      price,
-      image_url: "", 
       product_url: productUrl,
-      image_public_id: "", 
-    });
+      price,
+      image_url: imageUrl,           // "" якщо без картинки
+      image_public_id: image_public_id, // "" якщо без картинки
+    };
 
+    // 3) Валідація
+    const result = wishSchema.safeParse(payload);
     if (!result.success) {
-      const errorMessage = result.error.errors[0].message;
-      toast.error(errorMessage);
+      toast.error(result.error.errors[0].message);
       return;
     }
 
-    if (!imageFile) {
-      toast.error("Please upload an image");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { imageUrl,  image_public_id } = await handleUploadImage(imageFile);
-      setImageimage_public_id(image_public_id);
-
-      const response = await fetch(`/api/wishlists/${wishlistId}/wishes`, {
+    // 4) POST запит
+    const response = await fetch(
+      `/api/wishlists/${wishlistId}/wishes`,
+      {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          description,
-          image_url: imageUrl,
-          image_public_id: image_public_id,
-          product_url: productUrl,
-          price,
-        }),
-      });
+        body: JSON.stringify(payload),
+      }
+    );
+    if (!response.ok) throw new Error("Failed to add wish");
 
-      if (!response.ok) throw new Error("Failed to add wish");
+    toast.success("Wish added successfully!");
+    setIsOpen(false);
+    onWishAdded();
 
-      toast.success("Wish added successfully!");
-      setIsOpen(false);
-      onWishAdded();
+    // 5) Скидаємо форму
+    setName("");
+    setDescription("");
+    setImageFile(null);
+    setProductUrl("");
+    setPrice("");
+  } catch (err: any) {
+    toast.error(err.message || "Something went wrong");
+  } finally {
+    setLoading(false);
+  }
+};
 
-      // Reset form
-      setName("");
-      setDescription("");
-      setImageFile(null);
-      setImageimage_public_id(null);
-      setProductUrl("");
-      setPrice("");
-    } catch (err) {
-      toast.error((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <Transition appear show={isOpen} as={Fragment}>

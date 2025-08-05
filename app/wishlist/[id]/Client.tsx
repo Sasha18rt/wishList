@@ -15,9 +15,8 @@ import UserMenu from "@/components/user/UserMenu";
 import clsx from "clsx";
 import React from "react";
 
-
 interface WishlistPageProps {
-  serverWishlist: any; 
+  serverWishlist: any;
 }
 interface Wish {
   deleted: any;
@@ -58,7 +57,7 @@ interface WishlistData {
 
 export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
   const params = useParams();
-  
+
   const wishlistId = params?.id as string;
   const { data: session } = useSession();
   const [wishlist, setWishlist] = useState<WishlistData | null>(serverWishlist);
@@ -68,32 +67,34 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
   const [selectedWish, setSelectedWish] = useState<Wish | null>(null);
   const [isEditWishModalOpen, setIsEditWishModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'split' | 'card'>('split');
   // State mapping each wish's ID to its reserved user's name
-  const [reservationUsers, setReservationUsers] = useState<Record<string, string>>({});
+  const [reservationUsers, setReservationUsers] = useState<
+    Record<string, string>
+  >({});
   // State for pagination
-  const [visibleCount, setVisibleCount] = useState<number>(5);
+  const [visibleCount, setVisibleCount] = useState<number>(10);
 
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
-const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
+  const handleShowUserInfo = async (
+    userId: string,
+    event?: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    event?.currentTarget?.blur();
 
-const handleShowUserInfo = async (
-  userId: string,
-  event?: React.MouseEvent<HTMLButtonElement>
-) => {
-  event?.currentTarget?.blur();
+    try {
+      const res = await fetch(`/api/user/${userId}`);
+      if (!res.ok) throw new Error("Failed to load user info");
 
-  try {
-    const res = await fetch(`/api/user/${userId}`);
-    if (!res.ok) throw new Error("Failed to load user info");
-
-    const user = await res.json();
-    setSelectedUser(user);
-    setIsUserModalOpen(true);
-  } catch (err) {
-    toast.error("Cannot load user info");
-  }
-};
+      const user = await res.json();
+      setSelectedUser(user);
+      setIsUserModalOpen(true);
+    } catch (err) {
+      toast.error("Cannot load user info");
+    }
+  };
 
   // Fetch the wishlist data from the public API endpoint
   useEffect(() => {
@@ -101,23 +102,22 @@ const handleShowUserInfo = async (
       try {
         const res = await fetch(`/api/public-wishlists/${wishlistId}`);
         if (!res.ok) {
-          const errorData = await res.json(); 
+          const errorData = await res.json();
           throw new Error(errorData.error || "Failed to fetch wishlist");
         }
         const data = await res.json();
         setWishlist(data);
       } catch (err) {
-        setError((err as Error).message); 
+        setError((err as Error).message);
       } finally {
         setLoading(false);
       }
     }
-  
+
     if (wishlistId) {
       fetchWishlist();
     }
   }, [wishlistId]);
-  
 
   // Refresh the wishlist data
   const refreshWishlist = async () => {
@@ -137,7 +137,6 @@ const handleShowUserInfo = async (
       wishlist?.theme || "default"
     );
   }, [wishlist?.theme]);
-  
 
   // Function to fetch reservation user info for a given wish ID using your API
   async function fetchReservationUser(wishId: string) {
@@ -158,20 +157,22 @@ const handleShowUserInfo = async (
   useEffect(() => {
     const fetchAllReservationUsers = async () => {
       if (!wishlist?.reservations) return;
-  
+
       const promises = wishlist.reservations.map(async (res) => {
         const user = await fetchReservationUser(res.wish_id);
         return user ? { [res.wish_id]: user.name || user.email } : null;
       });
-  
+
       const results = await Promise.all(promises);
-      const merged = results.reduce((acc, item) => (item ? { ...acc, ...item } : acc), {});
+      const merged = results.reduce(
+        (acc, item) => (item ? { ...acc, ...item } : acc),
+        {}
+      );
       setReservationUsers(merged);
     };
-  
+
     fetchAllReservationUsers();
   }, [wishlist]);
-  
 
   // Handle reservation for a wish
   const handleReserve = async (wishId: string) => {
@@ -185,7 +186,7 @@ const handleShowUserInfo = async (
         const data = await res.json();
         throw new Error(data.error || "Failed to reserve wish");
       }
-      
+
       toast.success("Gift reserved!");
       if (wishlist) {
         setWishlist({
@@ -208,7 +209,9 @@ const handleShowUserInfo = async (
     }
   };
   const handleCancelReservation = async (wishId: string) => {
-    const res = await fetch(`/api/reservations/${wishId}`, { method: "DELETE" });
+    const res = await fetch(`/api/reservations/${wishId}`, {
+      method: "DELETE",
+    });
     if (!res.ok) {
       const body = await res.json();
       toast.error(body.error || "Failed to cancel");
@@ -225,8 +228,8 @@ const handleShowUserInfo = async (
     updatedWish: Wish,
     event?: React.MouseEvent<HTMLButtonElement>
   ) => {
-    (event?.currentTarget as HTMLButtonElement)?.blur(); 
-  
+    (event?.currentTarget as HTMLButtonElement)?.blur();
+
     if (updatedWish.deleted) {
       setWishlist((prev) => ({
         ...prev!,
@@ -240,20 +243,19 @@ const handleShowUserInfo = async (
         ),
       });
     }
-  
+
     setIsEditWishModalOpen(false);
     setSelectedWish(null);
   };
-  
+
   if (!wishlistId)
     return <p className="text-center text-lg text-error">Missing ID</p>;
 
   if (loading)
     return (
       <div className="h-screen w-full flex items-center justify-center">
-      <span className="loading loading-spinner loading-xl"></span>
-    </div>
-    
+        <span className="loading loading-spinner loading-xl"></span>
+      </div>
     );
 
   if (error) return <p className="text-center text-lg text-error">{error}</p>;
@@ -265,13 +267,12 @@ const handleShowUserInfo = async (
     <main className="min-h-screen max-w-xl mx-auto space-y-6 p-4 pb-24 relative">
       {/* Navbar */}
       <WishlistHeader
-  isOwner={isOwner}
-  session={session}
-  onEditWishlist={() => setIsWishlistModalOpen(true)}
-  onAddWish={() => setIsAddModalOpen(true)}
-  userMenu={<UserMenu />}
-/>
-
+        isOwner={isOwner}
+        session={session}
+        onEditWishlist={() => setIsWishlistModalOpen(true)}
+        onAddWish={() => setIsAddModalOpen(true)}
+        userMenu={<UserMenu />}
+      />
 
       {/* Wishlist Owner Info */}
       {wishlist && (
@@ -287,7 +288,9 @@ const handleShowUserInfo = async (
                 />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                  <span className="text-sm">{wishlist.user_id.name.charAt(0)}</span>
+                  <span className="text-sm">
+                    {wishlist.user_id.name.charAt(0)}
+                  </span>
                 </div>
               )}
               <div className="text-xs">
@@ -298,132 +301,165 @@ const handleShowUserInfo = async (
           )}
         </section>
       )}
-
+<button
+  className="btn btn-sm btn-outline mb-4"
+  onClick={() => setViewMode(vm => vm === 'split' ? 'card' : 'split')}
+>
+  {viewMode === 'split' ? 'Card View' : 'Split View'}
+</button>
       {/* List of Wishes */}
-      <ul className="space-y-4">
-        {wishlist?.wishes.slice(0, visibleCount).map((wish) => {
-          const reservationForWish = wishlist?.reservations?.find(
-            (r) => r.wish_id.toString() === wish._id.toString()
-          );
-          const isReserved = Boolean(reservationForWish);
-          const isMine = reservationForWish?.user_id === session?.user?.id;
-         
-          return (
-            <li
-            
-            key={wish._id}
-            className={clsx(
-              "rounded-xl p-4 bg-base-100 shadow-md space-y-2 transition-all",
-              isMine ? "border-2 border-primary" : "border"
-            )}
-          
-           >
-              <h3 className="text-lg font-semibold">{wish.name}</h3>
-              {wish.description && <p>{wish.description}</p>}
-              {wish.image_url && (
-                <img
-                  src={wish.image_url}
-                  alt={wish.name}
-                  className="w-full h-auto rounded"
-                />
-              )}
-              {wish.product_url && (
-                <a
-                  href={wish.product_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="link"
-                >
-                  View product ↗
-                </a>
-              )}
-              {wish.price && <p>💰 €{wish.price}</p>}
-              <p className="text-sm text-gray-500">
-                Added: {new Date(wish.added_at).toLocaleDateString()}
-              </p>
-              {isReserved ? (
-  session ? (
-    isOwner ? (
-      <p className="text-success font-semibold">Reserved</p>
-    ) : isMine ? (
-      <div className="mt-2">
-    <button
-      onClick={() => handleCancelReservation(wish._id)}
-      className="btn btn-sm btn-error normal-case"
-    >
-      Cancel reservation
-    </button>
-  </div>
-    ) : (
-      <p className="text-success font-semibold">
-        Reserved by {" "}
+     <ul className="space-y-4">
+  {wishlist?.wishes.slice(0, visibleCount).map((wish) => {
+    const reservationForWish = wishlist?.reservations?.find(
+      (r) => r.wish_id === wish._id
+    );
+    const isReserved = Boolean(reservationForWish);
+    const isMine = reservationForWish?.user_id === session?.user?.email;
+
+    if (viewMode === "split") {
+      return (
+        <li
+  key={wish._id}
+  className="flex items-stretch gap-4 border rounded-lg bg-base-100 shadow-md p-4 hover:shadow-lg transition"
+>
+  {/* ліва колонка – flex-колонка з justify-between */}
+  <div className="flex flex-col justify-between flex-1">
+    {/* верхній контент */}
+    <div className="space-y-1">
+      <h3 className="text-lg font-semibold">{wish.name}</h3>
+      {wish.description && (
+        <p className="text-sm text-gray-600">{wish.description}</p>
+      )}
+      {wish.product_url && (
+        <a
+          href={wish.product_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="link text-sm"
+        >
+          View product ↗
+        </a>
+      )}
+      {wish.price && <p className="text-sm">💰 €{wish.price}</p>}
+      <p className="text-xs text-gray-500">
+        Added: {new Date(wish.added_at).toLocaleDateString()}
+      </p>
+    </div>
+
+    {/* нижній блок кнопок */}
+    <div className="flex flex-col gap-x-2">
+      {isReserved ? (
+        isOwner ? (
+          <p className="text-success font-semibold">Reserved</p>
+        ) : isMine ? (
+          <button
+            onClick={() => handleCancelReservation(wish._id)}
+            className="btn btn-sm btn-error normal-case"
+          >
+            Cancel
+          </button>
+        ) : (
+          <p className="text-success font-semibold">
+            Reserved by {reservationUsers[wish._id]}
+          </p>
+        )
+      ) : isOwner ? (
+        <p className="text-gray-500">Not reserved</p>
+      ) : (
         <button
-          className="underline underline-offset-2 hover:text-info transition"
-          onClick={(e) => {
-            const reservation = wishlist?.reservations?.find(
-              (r) => r.wish_id === wish._id
-            );
-            if (reservation?.user_id) handleShowUserInfo(reservation.user_id, e);
+          className="btn btn-sm btn-primary"
+          onClick={() => handleReserve(wish._id)}
+        >
+          Reserve
+        </button>
+      )}
+      {isOwner && (
+        <button
+          className="btn btn-sm btn-secondary normal-case w-40  "
+          onClick={() => {
+            setSelectedWish(wish);
+            setIsEditWishModalOpen(true);
           }}
         >
-          {reservationUsers[wish._id] || (
-            <span className="loading loading-spinner loading-xs" />
-          )}
+          Edit Wish
         </button>
-      </p>
-    )
-  ) : (
-    <div className="flex items-start text-success font-semibold gap-1">
-      Reserved by 
-      <div
-        className="tooltip h-4 w-4 text-gray-400 hover:text-info transition"
-        data-tip="Log in to see who reserved"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-4 w-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"
-          />
-        </svg>
-      </div>
+      )}
     </div>
-  )
-) : isOwner ? (
-  <p className="text-gray-500">Not reserved</p>
-) : (
-  <button
-    className="btn btn-sm btn-primary"
-    onClick={() => handleReserve(wish._id)}
-  >
-    Reserve this gift
-  </button>
+  </div>
+
+  {/* права колонка зображення */}
+  {wish.image_url && (
+    <div className="w-24 flex-shrink-0 overflow-hidden rounded-md h-full">
+      <img
+        src={wish.image_url}
+        alt={wish.name}
+        className="w-full h-full object-cover"
+      />
+    </div>
+  )}
+</li>
+
+      );
+    } else {
+      // card view
+      return (
+        <li
+          key={wish._id}
+          className={clsx(
+            "rounded-xl p-4 bg-base-100 shadow-md space-y-2 transition-all",
+            isMine ? "border-2 border-primary" : "border"
+          )}
+        >
+          <h3 className="text-lg font-semibold">{wish.name}</h3>
+          {wish.description && <p>{wish.description}</p>}
+          {wish.image_url && (
+            <img
+              src={wish.image_url}
+              alt={wish.name}
+              className="w-full h-auto rounded"
+            />
+          )}
+          {wish.product_url && (
+            <a
+              href={wish.product_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="link"
+            >
+              View product ↗
+            </a>
+          )}
+          {wish.price && <p>💰 €{wish.price}</p>}
+          <p className="text-sm text-gray-500">
+            Added: {new Date(wish.added_at).toLocaleDateString()}
+          </p>
+          {/* ваші кнопки reserve/edit */}
+          {isReserved
+            ? isOwner
+              ? <p className="text-success">Reserved</p>
+              : isMine
+                ? <button className="btn btn-sm btn-error" onClick={() => handleCancelReservation(wish._id)}>Cancel</button>
+                : <p className="text-success">Reserved by {reservationUsers[wish._id]}</p>
+            : isOwner
+              ? <p className="text-gray-500">Not reserved</p>
+              : <button className="btn btn-sm btn-primary" onClick={() => handleReserve(wish._id)}>Reserve</button>
+          }
+          {isOwner && (
+   <button
+          className="btn btn-sm btn-secondary normal-case"
+          onClick={() => {
+            setSelectedWish(wish);
+            setIsEditWishModalOpen(true);
+          }}
+        >
+          Edit Wish
+        </button>
 )}
-
-
-              {isOwner && (
-                <button
-                  className="btn btn-sm btn-primary mt-2"
-                  onClick={(e) => {
-                    e.currentTarget.blur();
-                    setSelectedWish(wish);
-                    setIsEditWishModalOpen(true);
-                  }}
-                >
-                  Edit Wish
-                </button>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+        </li>
+      );
+    }
+  })}
+</ul>
 
       {/* Show More button */}
       <ShowMoreButton
@@ -432,7 +468,7 @@ const handleShowUserInfo = async (
         onShowMore={() => setVisibleCount(visibleCount + 5)}
       />
 
-      {/* Edit Wishlist Modal for owner */}
+      {/* Edit Wis hlist Modal for owner */}
       {isOwner && wishlist && (
         <EditWishlistModal
           wishlistId={wishlist._id}
@@ -466,13 +502,12 @@ const handleShowUserInfo = async (
         />
       )}
       {selectedUser && (
-  <UserProfileModal
-    isOpen={isUserModalOpen}
-    onClose={() => setIsUserModalOpen(false)}
-    user={selectedUser}
-  />
-)}
-
+        <UserProfileModal
+          isOpen={isUserModalOpen}
+          onClose={() => setIsUserModalOpen(false)}
+          user={selectedUser}
+        />
+      )}
     </main>
   );
 }

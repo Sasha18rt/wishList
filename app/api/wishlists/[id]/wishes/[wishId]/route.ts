@@ -4,12 +4,15 @@ import connectMongo from "@/libs/mongoose";
 import Wishlist from "@/models/Wishlist";
 import User from "@/models/User";
 import { wishSchema } from "@/app/validation/schemas";
+import { NextResponse } from "next/server";
+import { v2 as cloudinary } from "cloudinary";
 
-/**
- * @desc Update a specific wish inside a wishlist
- * @route PUT /api/wishlists/:id/wishes/:wishId
- * @access Private (Authenticated Users)
- */
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key: process.env.CLOUDINARY_API_KEY!,
+  api_secret: process.env.CLOUDINARY_API_SECRET!,
+});
+
 export async function PUT(
   req: Request,
   { params }: { params: { id: string; wishId: string } }
@@ -17,97 +20,87 @@ export async function PUT(
   try {
     await connectMongo();
 
+    // — Перевірка автентифікації
     const session = await getServerSession(authOptions);
-    if (!session)
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
+    // — Знаходимо користувача
     const user = await User.findOne({ email: session.user.email });
-    if (!user)
-      return Response.json({ error: "User not found" }, { status: 404 });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
+    // — Знаходимо wishlist і конкретний wish
     const wishlist = await Wishlist.findOne({
       _id: params.id,
       user_id: user._id,
     });
-    if (!wishlist)
-      return Response.json({ error: "Wishlist not found" }, { status: 404 });
-
-    const wishIndex = wishlist.wishes.findIndex(
-      (wish: any) => wish._id.toString() === params.wishId
-    );
-    if (wishIndex === -1)
-      return Response.json({ error: "Wish not found" }, { status: 404 });
-
-    let updateData: any = {};
-    const contentType = req.headers.get("content-type") || "";
-
-    if (contentType.includes("multipart/form-data")) {
-      const formData = await req.formData();
-      updateData.name = formData.get("name")?.toString();
-      updateData.description = formData.get("description")?.toString();
-      updateData.product_url = formData.get("product_url")?.toString();
-      updateData.price = formData.get("price")?.toString() || "";
-
-      const file = formData.get("file") as File;
-      if (file) {
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const stream = Readable.from(buffer);
-        const uploadResult = await new Promise<{ secure_url: string; public_id: string }>(
-          (resolve, reject) => {
-            const cloudStream = cloudinary.uploader.upload_stream(
-              { folder: "wishlist_uploads" },
-              (error, result) => {
-                if (error || !result) return reject(error);
-                resolve(result);
-              }
-            );
-            stream.pipe(cloudStream);
-          }
-        );
-        updateData.image_url = uploadResult.secure_url;
-        updateData.image_public_id = uploadResult.public_id;
-      } else {
-        updateData.image_url = formData.get("image_url")?.toString() || undefined;
-        updateData.image_public_id = formData.get("image_public_id")?.toString() || undefined;
-      }
-    } else {
-      updateData = await req.json();
+    if (!wishlist) {
+      return NextResponse.json({ error: "Wishlist not found" }, { status: 404 });
     }
 
-    const parsed = wishSchema.safeParse(updateData);
-    if (!parsed.success)
-      return Response.json(
+    const wish = wishlist.wishes.find(
+      (w: any) => w._id.toString() === params.wishId
+    );
+    if (!wish) {
+      return NextResponse.json({ error: "Wish not found" }, { status: 404 });
+    }
+
+    // — Парсимо JSON-тіло запиту (без multipart/form-data)
+    const data = await req.json();
+    const parsed = wishSchema.safeParse(data);
+    if (!parsed.success) {
+      return NextResponse.json(
         { error: parsed.error.errors[0].message },
         { status: 400 }
       );
+    }
 
-    const { name, description, image_url, image_public_id, product_url, price } = parsed.data;
-    const wish = wishlist.wishes[wishIndex];
-    const oldImagePublicId = wish.image_public_id;
+    const {
+      name,
+      description,
+      product_url,
+      price,
+      image_url,
+      image_public_id,
+    } = parsed.data;
 
-    // If a new image was provided and differs from the old one, delete the old image
-    if (image_url && image_public_id && oldImagePublicId && oldImagePublicId !== image_public_id) {
+    // — Якщо прийшла нова картинка, що відрізняється від старої, видаляємо стару
+    if (
+      image_url &&
+      image_public_id &&
+      wish.image_public_id &&
+      wish.image_public_id !== image_public_id
+    ) {
       try {
-        await cloudinary.uploader.destroy(oldImagePublicId);
+        await cloudinary.uploader.destroy(wish.image_public_id);
       } catch (err) {
         console.warn("Failed to delete old image", err);
       }
     }
 
-    Object.assign(wish, {
-      name,
-      description,
-      image_url: image_url || null,
-      image_public_id: image_public_id || null,
-      product_url: product_url || "",
-      price: price === "" ? null : price,
-    });
+    // — Оновлюємо тільки ті поля, що прийшли в запиті
+    if (name !== undefined)              wish.name = name;
+    if (description !== undefined)       wish.description = description;
+    if (product_url !== undefined)       wish.product_url = product_url;
+    // для price: порожній рядок приводимо в null
+    if (price !== undefined)             wish.price = price === "" ? null : price;
+    // для зображень: якщо нема в запиті — лишаємо старі
+    if (image_url !== undefined)         wish.image_url = image_url || null;
+    if (image_public_id !== undefined)   wish.image_public_id = image_public_id || null;
 
+    // — Зберігаємо оновлений wishlist
     await wishlist.save();
-    return Response.json(wish.toObject(), { status: 200 });
+
+    return NextResponse.json(wish.toObject(), { status: 200 });
   } catch (error) {
     console.error("Error updating wish:", error);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
@@ -116,8 +109,7 @@ export async function PUT(
  * @route DELETE /api/wishlists/:id/wishes/:wishId
  * @access Private (Authenticated Users)
  */
-import { NextResponse } from "next/server";
-import { v2 as cloudinary } from "cloudinary";
+
 import { Readable } from "stream";
 
 

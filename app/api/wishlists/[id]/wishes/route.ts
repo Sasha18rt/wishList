@@ -77,50 +77,73 @@ export async function POST(
     await connectMongo();
 
     const session = await getServerSession(authOptions);
-    if (!session)
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     const user = await User.findOne({ email: session.user.email });
-    if (!user)
-      return Response.json({ error: "User not found" }, { status: 404 });
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: "User not found" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     const wishlist = await Wishlist.findOne({
       _id: params.id,
       user_id: user._id,
     });
-    if (!wishlist)
-      return Response.json({ error: "Wishlist not found" }, { status: 404 });
+    if (!wishlist) {
+      return new Response(
+        JSON.stringify({ error: "Wishlist not found" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     const data = await req.json();
-
     const parsed = wishSchema.safeParse(data);
+    if (!parsed.success) {
+      return new Response(
+        JSON.stringify({ error: "Invalid data", details: parsed.error.format() }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     const {
       name,
       description,
-      image_url,
-      image_public_id,
       product_url,
       price,
+      // ці поля можуть бути відсутніми
+      image_url,
+      image_public_id,
     } = parsed.data;
 
     const newWish = {
       name,
       description,
-      image_url: image_url || null,
-      image_public_id: image_public_id || null,
       product_url,
       price: price === "" ? null : price,
+      image_url: image_url ?? null,
+      image_public_id: image_public_id ?? null,
       added_at: new Date(),
     };
-
 
     wishlist.wishes.push(newWish);
     await wishlist.save();
 
-    return Response.json(newWish, { status: 201 });
+    return new Response(JSON.stringify(newWish), {
+      status: 201,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("Error creating wish:", error);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+    return new Response(
+      JSON.stringify({ error: "Internal server error" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
 }

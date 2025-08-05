@@ -2,7 +2,7 @@ import { Suspense } from 'react'
 import Header from "@/components/layout/Header";
 import Hero from "@/components/main/Hero";
 import FAQ from "@/components/main/FAQ";
-import CTA from "@/app/privacy-policy/CTA";
+import CTA from "@/components/main/CTA";
 import Footer from "@/components/layout/Footer";
 
 export default function Home() {
