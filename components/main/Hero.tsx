@@ -12,7 +12,7 @@ const Hero = () => {
   const handleClick = () => {
     if (session?.user) {
      
-      router.push("/explore");
+      router.push("/dashboard");
     }
   };
 
