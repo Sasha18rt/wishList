@@ -32,6 +32,9 @@ export const authOptions: NextAuthOptions = {
       },
     }), 
   ],
+    pages: {
+      signIn: "/auth/signin", 
+  },
   //MongoDBAdapter
   ...(connectMongo && { adapter: MongoDBAdapter(connectMongo) }),
   callbacks: {

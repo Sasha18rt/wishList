@@ -73,8 +73,8 @@ const config = {
     forwardRepliesTo: "sasharotaenko1@gmail.com",
   },
   colors: {
-    theme: "",
-    main: themes[`[data-theme=light]`]["primary"],
+    theme: "emerald",
+    main: themes[`[data-theme=emerald]`]["primary"],
   },
   
   auth: {
