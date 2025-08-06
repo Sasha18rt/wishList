@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { useSession } from "next-auth/react";
 import EditWishlistModal from "@/components/wishlist/EditWishlistModal";
 import EditWishModal from "@/components/wishlist/EditWishModal";
 import AddWishModal from "@/components/wishlist/AddWishModal";
-import Confetti from "react-confetti";
+import confetti from "canvas-confetti";
 import ShowMoreButton from "@/components/wishlist/ShowMoreButton";
 import UserProfileModal from "@/components/user/UserProfileModal";
 import WishlistHeader from "@/components/wishlist/WishListHeader";
@@ -68,8 +68,7 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
   const [isEditWishModalOpen, setIsEditWishModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"split" | "card">("split");
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   // State mapping each wish's ID to its reserved user's name
   const [reservationUsers, setReservationUsers] = useState<
     Record<string, string>
@@ -97,13 +96,16 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
       toast.error("Cannot load user info");
     }
   };
-  useEffect(() => {
-    function updateSize() {
-      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+ useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     }
-    updateSize();
-    window.addEventListener("resize", updateSize);
-    return () => window.removeEventListener("resize", updateSize);
+    resize();
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
   }, []);
   // Fetch the wishlist data from the public API endpoint
   useEffect(() => {
@@ -184,42 +186,75 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
   }, [wishlist]);
 
   // Handle reservation for a wish
-  const handleReserve = async (wishId: string) => {
-    try {
-      const res = await fetch("/api/reservations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wishlistId, wishId }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to reserve wish");
-      }
-// запускаємо конфетті на 3 секунди
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 4000);
-      toast.success("Gift reserved!");
-      
-      if (wishlist) {
-        setWishlist({
-          ...wishlist,
-          reservations: [
-            ...(wishlist.reservations || []),
-            {
-              wishlist_id: wishlist._id,
-              wish_id: wishId,
-              user_id: session?.user?.email,
-              reserved_at: new Date().toISOString(),
-            },
-          ],
-        });
-      }
-      // After reserving, refresh the wishlist to update reservation users
-      refreshWishlist();
-    } catch (err) {
-      toast.error((err as Error).message);
+ const handleReserve = async (
+  wishId: string,
+  e: React.MouseEvent<HTMLButtonElement>
+) => {
+  try {
+    // 1) Виконуємо резервацію
+    const res = await fetch("/api/reservations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ wishlistId, wishId }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Failed to reserve wish");
     }
-  };
+
+    // 2) Обчислюємо origin кліку
+    const { clientX, clientY } = e;
+    const originX = clientX / window.innerWidth;
+    const originY = clientY / window.innerHeight;
+
+    // 3) Створюємо екземпляр canvas-confetti
+    if (!canvasRef.current) return;
+    const myConfetti = confetti.create(canvasRef.current, {
+      resize: true,
+      useWorker: true,
+    });
+
+    // 4) Налаштування для феєрверку
+    const count = 200;
+    const defaults = { origin: { x: originX, y: originY } };
+
+    const fire = (particleRatio: number, opts: confetti.Options) => {
+      myConfetti({
+        ...defaults,
+        ...opts,
+        particleCount: Math.floor(count * particleRatio),
+      });
+    };
+
+    // 5) Запускаємо серію сплесків
+    fire(0.25, { spread: 26, startVelocity: 55 });
+    fire(0.2,  { spread: 60 });
+    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+    fire(0.1,  { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+    fire(0.1,  { spread: 120, startVelocity: 45 });
+
+    // 6) Тост і оновлення стану
+    toast.success("Gift reserved!");
+    if (wishlist) {
+      setWishlist({
+        ...wishlist,
+        reservations: [
+          ...(wishlist.reservations || []),
+          {
+            wishlist_id: wishlist._id,
+            wish_id: wishId,
+            user_id: session?.user?.email,
+            reserved_at: new Date().toISOString(),
+          },
+        ],
+      });
+    }
+    refreshWishlist();
+  } catch (err) {
+    toast.error((err as Error).message);
+  }
+};
+
   const handleCancelReservation = async (wishId: string) => {
     const res = await fetch(`/api/reservations/${wishId}`, {
       method: "DELETE",
@@ -277,16 +312,11 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
 
   return (
     <>  
-    {showConfetti && (
-       <Confetti
-         width={windowSize.width}
-        height={windowSize.height}
-         numberOfPieces={300}
-         recycle={false}
-         gravity={0.3}
-          wind={0.09}
-       />
-     )}
+    <canvas
+  ref={canvasRef}
+  className="fixed inset-0 pointer-events-none z-50"
+/>
+
     <main className="min-h-screen max-w-xl mx-auto space-y-6 p-4 pb-24 relative">
       {/* Navbar */}
       <WishlistHeader
@@ -409,7 +439,7 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
                     ) : (
                       <button
                         className="btn btn-sm btn-primary"
-                        onClick={() => handleReserve(wish._id)}
+                        onClick={(e) => handleReserve(wish._id, e)}
                       >
                         Reserve
                       </button>
@@ -508,7 +538,7 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
                 ) : (
                   <button
                     className="btn btn-sm btn-primary"
-                    onClick={() => handleReserve(wish._id)}
+                    onClick={(e) => handleReserve(wish._id, e)}
                   >
                     Reserve
                   </button>

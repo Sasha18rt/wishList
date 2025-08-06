@@ -19,6 +19,7 @@
     "@react-spring/web": "^9.5.5",
     "@vercel/og": "^0.6.8",
     "axios": "^1.4.0",
+    "canvas-confetti": "^1.9.3",
     "cloudinary": "^2.6.0",
     "clsx": "^2.1.1",
     "crisp-sdk-web": "^1.0.21",
@@ -37,7 +38,6 @@
     "nextjs-toploader": "^1.4.2",
     "nodemailer": "^6.9.4",
     "react": "18.2.0",
-    "react-confetti": "^6.4.0",
     "react-dom": "18.2.0",
     "react-hot-toast": "^2.4.1",
     "react-swipeable": "^7.0.2",
@@ -52,6 +52,7 @@
     "@auth/core": "4.0.0"
   },
   "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
     "@types/jest": "^29.5.4",
     "@types/mdx": "^2.0.7",
     "@types/mongoose": "^5.11.97",
