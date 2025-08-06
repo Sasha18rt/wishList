@@ -24,3 +24,6 @@ progress::-webkit-progress-value {
 .active-cursor:active {
   cursor: url('/drag.png') 16 16, grabbing;
 }
+ img {
+    @apply rounded-lg;
+  }
