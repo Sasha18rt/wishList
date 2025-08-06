@@ -26,7 +26,7 @@ export default function SignInPage() {
 
           {providers?.google && (
             <button
-              onClick={() => signIn("google", { callbackUrl: "/" })}
+              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
               className="btn  btn-primary w-full flex items-center justify-center mb-4"
             >
               <img
