@@ -195,11 +195,11 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
         const data = await res.json();
         throw new Error(data.error || "Failed to reserve wish");
       }
-
-      toast.success("Gift reserved!");
-      // запускаємо конфетті на 3 секунди
+// запускаємо конфетті на 3 секунди
       setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 3000);
+      setTimeout(() => setShowConfetti(false), 4000);
+      toast.success("Gift reserved!");
+      
       if (wishlist) {
         setWishlist({
           ...wishlist,
@@ -276,6 +276,17 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
   const isOwner = session?.user?.email === wishlist?.user_id?.email;
 
   return (
+    <>  
+    {showConfetti && (
+       <Confetti
+         width={windowSize.width}
+        height={windowSize.height}
+         numberOfPieces={300}
+         recycle={false}
+         gravity={0.3}
+          wind={0.09}
+       />
+     )}
     <main className="min-h-screen max-w-xl mx-auto space-y-6 p-4 pb-24 relative">
       {/* Navbar */}
       <WishlistHeader
@@ -567,5 +578,6 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
         />
       )}
     </main>
+    </>
   );
 }
