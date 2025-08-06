@@ -312,11 +312,10 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
 
   return (
     <>  
-    <canvas
-  ref={canvasRef}
-  className="fixed inset-0 pointer-events-none z-50"
-/>
-
+     <canvas
+        ref={canvasRef}
+        className="fixed top-0 left-0 w-full h-full pointer-events-none z-10"
+      />
     <main className="min-h-screen max-w-xl mx-auto space-y-6 p-4 pb-24 relative">
       {/* Navbar */}
       <WishlistHeader
