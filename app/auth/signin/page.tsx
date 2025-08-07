@@ -1,14 +1,36 @@
 "use client";
 
 import { getProviders, signIn } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function SignInPage() {
   const [providers, setProviders] = useState<Record<string, any> | null>(null);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     getProviders().then(setProviders);
   }, []);
+
+  // Куди повертати після логіна:
+  const callbackUrl = useMemo(() => {
+    // 1) якщо прийшли на /signin?callbackUrl=...
+    const fromQuery = searchParams?.get("callbackUrl");
+    if (fromQuery) return fromQuery;
+
+    // 2) спробувати повернути на той самий домен з реферера
+    if (typeof window !== "undefined" && document.referrer) {
+      try {
+        const ref = new URL(document.referrer);
+        if (ref.origin === window.location.origin) {
+          return `${ref.pathname}${ref.search}${ref.hash}`;
+        }
+      } catch {}
+    }
+
+    // 3) фолбек
+    return "/";
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-base-200 px-4">
@@ -26,8 +48,8 @@ export default function SignInPage() {
 
           {providers?.google && (
             <button
-              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-              className="btn  btn-primary w-full flex items-center justify-center mb-4"
+              onClick={() => signIn("google", { callbackUrl })}
+              className="btn btn-primary w-full flex items-center justify-center mb-4"
             >
               <img
                 src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/icons/google.svg"
@@ -38,9 +60,7 @@ export default function SignInPage() {
             </button>
           )}
 
-          <p className="text-xs text-gray-500">
-            Only Google sign-in is supported.
-          </p>
+          <p className="text-xs text-gray-500">Only Google sign-in is supported.</p>
         </div>
       </div>
     </div>

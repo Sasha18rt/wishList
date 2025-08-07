@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import toast from "react-hot-toast";
@@ -12,47 +11,12 @@ import ShowMoreButton from "@/components/wishlist/ShowMoreButton";
 import UserProfileModal from "@/components/user/UserProfileModal";
 import WishlistHeader from "@/components/wishlist/WishListHeader";
 import UserMenu from "@/components/user/UserMenu";
-import clsx from "clsx";
-import React from "react";
+import type { Wish, Reservation, WishlistData } from "@/types/wishlist";
 
+import React from "react";
+import WishesList from "@/components/wishlist/WishesList";
 interface WishlistPageProps {
   serverWishlist: any;
-}
-interface Wish {
-  deleted: any;
-  _id: string;
-  name: string;
-  description?: string;
-  image_url?: string;
-  product_url?: string;
-  price?: string;
-  added_at: string;
-  isReserved?: boolean;
-  reservedBy?: string;
-}
-
-interface Reservation {
-  wishlist_id: string;
-  wish_id: string;
-  user_id: string;
-  reserved_at: string;
-}
-
-interface WishlistData {
-  _id: string;
-  title: string;
-  theme: string;
-  user_id: {
-    _id: string;
-    name: string;
-    email: string;
-    nickname: string;
-    image?: string;
-  };
-  wishes: Wish[];
-  reservations?: Reservation[];
-  visibility?: string;
-  created_at?: string;
 }
 
 export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
@@ -65,10 +29,11 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [isWishlistModalOpen, setIsWishlistModalOpen] = useState(false);
   const [selectedWish, setSelectedWish] = useState<Wish | null>(null);
+
   const [isEditWishModalOpen, setIsEditWishModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"split" | "card">("split");
-   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   // State mapping each wish's ID to its reserved user's name
   const [reservationUsers, setReservationUsers] = useState<
     Record<string, string>
@@ -96,7 +61,7 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
       toast.error("Cannot load user info");
     }
   };
- useEffect(() => {
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     function resize() {
@@ -186,74 +151,74 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
   }, [wishlist]);
 
   // Handle reservation for a wish
- const handleReserve = async (
-  wishId: string,
-  e: React.MouseEvent<HTMLButtonElement>
-) => {
-  try {
-    // 1) Виконуємо резервацію
-    const res = await fetch("/api/reservations", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ wishlistId, wishId }),
-    });
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || "Failed to reserve wish");
-    }
-
-    // 2) Обчислюємо origin кліку
-    const { clientX, clientY } = e;
-    const originX = clientX / window.innerWidth;
-    const originY = clientY / window.innerHeight;
-
-    // 3) Створюємо екземпляр canvas-confetti
-    if (!canvasRef.current) return;
-    const myConfetti = confetti.create(canvasRef.current, {
-      resize: true,
-      useWorker: true,
-    });
-
-    // 4) Налаштування для феєрверку
-    const count = 200;
-    const defaults = { origin: { x: originX, y: originY } };
-
-    const fire = (particleRatio: number, opts: confetti.Options) => {
-      myConfetti({
-        ...defaults,
-        ...opts,
-        particleCount: Math.floor(count * particleRatio),
+  const handleReserve = async (
+    wishId: string,
+    e: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    try {
+      // 1) Виконуємо резервацію
+      const res = await fetch("/api/reservations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wishlistId, wishId }),
       });
-    };
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to reserve wish");
+      }
 
-    // 5) Запускаємо серію сплесків
-    fire(0.25, { spread: 26, startVelocity: 55 });
-    fire(0.2,  { spread: 60 });
-    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
-    fire(0.1,  { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
-    fire(0.1,  { spread: 120, startVelocity: 45 });
+      // 2) Обчислюємо origin кліку
+      const { clientX, clientY } = e;
+      const originX = clientX / window.innerWidth;
+      const originY = clientY / window.innerHeight;
 
-    // 6) Тост і оновлення стану
-    toast.success("Gift reserved!");
-    if (wishlist) {
-      setWishlist({
-        ...wishlist,
-        reservations: [
-          ...(wishlist.reservations || []),
-          {
-            wishlist_id: wishlist._id,
-            wish_id: wishId,
-            user_id: session?.user?.email,
-            reserved_at: new Date().toISOString(),
-          },
-        ],
+      // 3) Створюємо екземпляр canvas-confetti
+      if (!canvasRef.current) return;
+      const myConfetti = confetti.create(canvasRef.current, {
+        resize: true,
+        useWorker: true,
       });
+
+      // 4) Налаштування для феєрверку
+      const count = 200;
+      const defaults = { origin: { x: originX, y: originY } };
+
+      const fire = (particleRatio: number, opts: confetti.Options) => {
+        myConfetti({
+          ...defaults,
+          ...opts,
+          particleCount: Math.floor(count * particleRatio),
+        });
+      };
+
+      // 5) Запускаємо серію сплесків
+      fire(0.25, { spread: 26, startVelocity: 55 });
+      fire(0.2, { spread: 60 });
+      fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+      fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+      fire(0.1, { spread: 120, startVelocity: 45 });
+
+      // 6) Тост і оновлення стану
+      toast.success("Gift reserved!");
+      if (wishlist) {
+        setWishlist({
+          ...wishlist,
+          reservations: [
+            ...(wishlist.reservations || []),
+            {
+              wishlist_id: wishlist._id,
+              wish_id: wishId,
+              user_id: session?.user?.id,
+              reserved_at: new Date().toISOString(),
+            },
+          ],
+        });
+      }
+      refreshWishlist();
+    } catch (err) {
+      toast.error((err as Error).message);
     }
-    refreshWishlist();
-  } catch (err) {
-    toast.error((err as Error).message);
-  }
-};
+  };
 
   const handleCancelReservation = async (wishId: string) => {
     const res = await fetch(`/api/reservations/${wishId}`, {
@@ -265,35 +230,36 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
       return;
     }
     toast.success("Reservation cancelled");
-    setWishlist((w) => ({
-      ...w,
-      reservations: w.reservations?.filter((r) => r.wish_id !== wishId),
-    }));
+    setWishlist((w) =>
+  w
+    ? {
+        ...w,
+        reservations: (w.reservations || []).filter((r) => r.wish_id !== wishId),
+      }
+    : w
+);
   };
   // Update a wish after editing
-  const handleWishUpdated = (
-    updatedWish: Wish,
-    event?: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    (event?.currentTarget as HTMLButtonElement)?.blur();
+ const handleWishUpdated = (updatedWish: Wish, event?: React.MouseEvent<HTMLButtonElement>) => {
+  (event?.currentTarget as HTMLButtonElement)?.blur();
 
-    if (updatedWish.deleted) {
-      setWishlist((prev) => ({
-        ...prev!,
-        wishes: prev!.wishes.filter((w) => w._id !== updatedWish._id),
-      }));
-    } else if (wishlist) {
-      setWishlist({
-        ...wishlist,
-        wishes: wishlist.wishes.map((wish) =>
-          wish._id === updatedWish._id ? updatedWish : wish
-        ),
-      });
-    }
+  if (updatedWish.deleted) {
+    setWishlist((prev) => ({
+      ...prev!,
+      wishes: prev!.wishes.filter((w) => w._id !== updatedWish._id),
+    }));
+  } else if (wishlist) {
+    setWishlist({
+      ...wishlist,
+      wishes: wishlist.wishes.map((wish) =>
+        wish._id === updatedWish._id ? updatedWish : wish
+      ),
+    });
+  }
 
-    setIsEditWishModalOpen(false);
-    setSelectedWish(null);
-  };
+  setIsEditWishModalOpen(false);
+  setSelectedWish(null);
+};
 
   if (!wishlistId)
     return <p className="text-center text-lg text-error">Missing ID</p>;
@@ -307,306 +273,125 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
 
   if (error) return <p className="text-center text-lg text-error">{error}</p>;
 
-  // Determine if the current session user is the owner of the wishlist
   const isOwner = session?.user?.email === wishlist?.user_id?.email;
 
   return (
-    <>  
-     <canvas
+    <>
+      <canvas
         ref={canvasRef}
         className="fixed top-0 left-0 w-full h-full pointer-events-none z-10"
       />
-    <main className="min-h-screen max-w-xl mx-auto space-y-6 p-4 pb-24 relative">
-      {/* Navbar */}
-      <WishlistHeader
-        isOwner={isOwner}
-        session={session}
-        onEditWishlist={() => setIsWishlistModalOpen(true)}
-        onAddWish={() => setIsAddModalOpen(true)}
-        userMenu={<UserMenu />}
-      />
+      <main className="min-h-screen max-w-xl mx-auto space-y-6 p-4 pb-24 relative">
+        {/* Navbar */}
+        <WishlistHeader
+          isOwner={isOwner}
+          session={session}
+          onEditWishlist={() => setIsWishlistModalOpen(true)}
+          onAddWish={() => setIsAddModalOpen(true)}
+          userMenu={<UserMenu />}
+        />
 
-      {/* Wishlist Owner Info */}
-      {wishlist && (
-        <section className="text-center">
-          <h1 className="text-6xl font-bold mt-2">{wishlist.title}</h1>
-          {isOwner ? null : (
-            <div className="mt-4 text-left flex items-center justify-start space-x-2">
-              {wishlist.user_id.image ? (
-                <img
-                  src={wishlist.user_id.image}
-                  alt={wishlist.user_id.name}
-                  className="w-8 h-8 rounded-full"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                  <span className="text-sm">
-                    {wishlist.user_id.name.charAt(0)}
-                  </span>
-                </div>
-              )}
-              <div className="text-xs">
-                <p className="font-semibold">{wishlist.user_id.name}</p>
-                <p className="font-light">{wishlist.user_id.email}</p>
-              </div>
-            </div>
-          )}
-        </section>
-      )}
-      <button
-        className="btn btn-sm btn-outline mb-4"
-        onClick={() => setViewMode((vm) => (vm === "split" ? "card" : "split"))}
-      >
-        {viewMode === "split" ? "Card View" : "Split View"}
-      </button>
-      {/* List of Wishes */}
-      <ul className="space-y-4">
-        {wishlist?.wishes.slice(0, visibleCount).map((wish) => {
-          const reservationForWish = wishlist?.reservations?.find(
-            (r) => r.wish_id === wish._id
-          );
-          const isReserved = Boolean(reservationForWish);
-          const isMine = reservationForWish?.user_id === session?.user?.id;
-
-          if (viewMode === "split") {
-            return (
-              <li
-                key={wish._id}
-                className="flex items-stretch gap-4 border rounded-lg bg-base-100 shadow-md p-4 hover:shadow-lg transition"
-              >
-                {/* ліва колонка – flex-колонка з justify-between */}
-                <div className="flex flex-col justify-between flex-1">
-                  {/* верхній контент */}
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-semibold">{wish.name}</h3>
-                    {wish.description && (
-                      <p className="text-sm text-gray-600">
-                        {wish.description}
-                      </p>
-                    )}
-                    {wish.product_url && (
-                      <a
-                        href={wish.product_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="link text-sm"
-                      >
-                        View product ↗
-                      </a>
-                    )}
-                    {wish.price && <p className="text-sm">💰 €{wish.price}</p>}
-                    <p className="text-xs text-gray-500">
-                      Added: {new Date(wish.added_at).toLocaleDateString()}
-                    </p>
-                  </div>
-
-                  {/* нижній блок кнопок */}
-                  <div className="flex flex-col gap-x-2">
-                    {isReserved ? (
-                      isOwner ? (
-                        <p className="text-success font-semibold">Reserved</p>
-                      ) : isMine ? (
-                        <div className="mt-2">
-                          <button
-                            onClick={() => handleCancelReservation(wish._id)}
-                            className="btn btn-sm btn-error normal-case"
-                          >
-                            Cancel reservation
-                          </button>
-                        </div>
-                      ) : (
-                        <p className="text-success font-semibold">
-                          Reserved by{" "}
-                          <button
-                            className="underline underline-offset-2 hover:text-info transition"
-                            onClick={(e) => {
-                              const reservation = wishlist?.reservations?.find(
-                                (r) => r.wish_id === wish._id
-                              );
-                              if (reservation?.user_id)
-                                handleShowUserInfo(reservation.user_id, e);
-                            }}
-                          >
-                            {reservationUsers[wish._id] || (
-                              <span className="loading loading-spinner loading-xs" />
-                            )}
-                          </button>
-                        </p>
-                      )
-                    ) : isOwner ? (
-                      <p className="text-gray-500">Not reserved</p>
-                    ) : (
-                      <button
-                        className="btn btn-sm btn-primary"
-                        onClick={(e) => handleReserve(wish._id, e)}
-                      >
-                        Reserve
-                      </button>
-                    )}
-                    {isOwner && (
-                      <button
-                        className="btn btn-sm btn-secondary normal-case w-40  "
-                        onClick={() => {
-                          setSelectedWish(wish);
-                          setIsEditWishModalOpen(true);
-                        }}
-                      >
-                        Edit Wish
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* права колонка зображення */}
-                {wish.image_url && (
-                  <div className="w-24 flex-shrink-0 overflow-hidden rounded-md h-full">
-                    <img
-                      src={wish.image_url}
-                      alt={wish.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-              </li>
-            );
-          } else {
-            // card view
-            return (
-              <li
-                key={wish._id}
-                className={clsx(
-                  "rounded-xl p-4 bg-base-100 shadow-md space-y-2 transition-all",
-                  isMine ? "border-2 border-primary" : "border"
-                )}
-              >
-                <h3 className="text-lg font-semibold">{wish.name}</h3>
-                {wish.description && <p>{wish.description}</p>}
-                {wish.image_url && (
+        {/* Wishlist Owner Info */}
+        {wishlist && (
+          <section className="text-center">
+            <h1 className="text-6xl font-bold mt-2">{wishlist.title}</h1>
+            {isOwner ? null : (
+              <div className="mt-4 text-left flex items-center justify-start space-x-2">
+                {wishlist.user_id.image ? (
                   <img
-                    src={wish.image_url}
-                    alt={wish.name}
-                    className="w-full h-auto rounded"
+                    src={wishlist.user_id.image}
+                    alt={wishlist.user_id.name}
+                    className="w-8 h-8 rounded-full"
                   />
-                )}
-                {wish.product_url && (
-                  <a
-                    href={wish.product_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="link"
-                  >
-                    View product ↗
-                  </a>
-                )}
-                {wish.price && <p>💰 €{wish.price}</p>}
-                <p className="text-sm text-gray-500">
-                  Added: {new Date(wish.added_at).toLocaleDateString()}
-                </p>
-                {/* ваші кнопки reserve/edit */}
-                {isReserved ? (
-                  isOwner ? (
-                    <p className="text-success">Reserved</p>
-                  ) : isMine ? (
-                    <button
-                      onClick={() => handleCancelReservation(wish._id)}
-                      className="btn btn-sm btn-error normal-case"
-                    >
-                      Cancel reservation
-                    </button>
-                  ) : (
-                    <p className="text-success font-semibold">
-                      Reserved by{" "}
-                      <button
-                        className="underline underline-offset-2 hover:text-info transition"
-                        onClick={(e) => {
-                          const reservation = wishlist?.reservations?.find(
-                            (r) => r.wish_id === wish._id
-                          );
-                          if (reservation?.user_id)
-                            handleShowUserInfo(reservation.user_id, e);
-                        }}
-                      >
-                        {reservationUsers[wish._id] || (
-                          <span className="loading loading-spinner loading-xs" />
-                        )}
-                      </button>
-                    </p>
-                  )
-                ) : isOwner ? (
-                  <p className="text-gray-500">Not reserved</p>
                 ) : (
-                  <button
-                    className="btn btn-sm btn-primary"
-                    onClick={(e) => handleReserve(wish._id, e)}
-                  >
-                    Reserve
-                  </button>
+                  <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                    <span className="text-sm">
+                      {wishlist.user_id.name.charAt(0)}
+                    </span>
+                  </div>
                 )}
-                {isOwner && (
-                  <button
-                    className="btn btn-sm btn-secondary normal-case"
-                    onClick={() => {
-                      setSelectedWish(wish);
-                      setIsEditWishModalOpen(true);
-                    }}
-                  >
-                    Edit Wish
-                  </button>
-                )}
-              </li>
-            );
+                <div className="text-xs">
+                  <p className="font-semibold">{wishlist.user_id.name}</p>
+                  <p className="font-light">{wishlist.user_id.email}</p>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+        <button
+          className="btn btn-sm btn-outline mb-4"
+          onClick={() =>
+            setViewMode((vm) => (vm === "split" ? "card" : "split"))
           }
-        })}
-      </ul>
+        >
+          {viewMode === "split" ? "Card View" : "Split View"}
+        </button>
+        {/* List of Wishes */}
+        <WishesList
+          wishlist={wishlist!}
+          viewMode={viewMode}
+          visibleCount={visibleCount}
+          isOwner={isOwner}
+          isLoggedIn={!!session}
+          sessionUserId={session?.user?.id ?? null}
+          reservationUsers={reservationUsers}
+          onReserve={handleReserve}
+          onCancel={handleCancelReservation}
+          onEdit={(wish) => {
+            setSelectedWish(wish);
+            setIsEditWishModalOpen(true);
+          }}
+          onShowUserInfo={handleShowUserInfo}
+        />
 
-      {/* Show More button */}
-      <ShowMoreButton
-        currentCount={visibleCount}
-        total={wishlist?.wishes.length || 0}
-        onShowMore={() => setVisibleCount(visibleCount + 5)}
-      />
+        {/* Show More button */}
+        <ShowMoreButton
+          currentCount={visibleCount}
+          total={wishlist?.wishes.length || 0}
+          onShowMore={() => setVisibleCount(visibleCount + 5)}
+        />
 
-      {/* Edit Wis hlist Modal for owner */}
-      {isOwner && wishlist && (
-        <EditWishlistModal
-          wishlistId={wishlist._id}
-          initialTitle={wishlist.title}
-          initialTheme={wishlist.theme || "default"}
-          initialVisibility={wishlist.visibility || "private"}
-          isOpen={isWishlistModalOpen}
-          setIsOpen={setIsWishlistModalOpen}
-          onUpdate={(updated) => {
+        {/* Edit Wis hlist Modal for owner */}
+        {isOwner && wishlist && (
+          <EditWishlistModal
+            wishlistId={wishlist._id}
+            initialTitle={wishlist.title}
+            initialTheme={wishlist.theme || "default"}
+            initialVisibility={wishlist.visibility || "private"}
+            isOpen={isWishlistModalOpen}
+            setIsOpen={setIsWishlistModalOpen}
+            onUpdate={(updated) => {
+              refreshWishlist();
+              setIsWishlistModalOpen(false);
+            }}
+          />
+        )}
+
+        <AddWishModal
+          wishlistId={wishlistId}
+          isOpen={isAddModalOpen}
+          setIsOpen={setIsAddModalOpen}
+          onWishAdded={() => {
             refreshWishlist();
-            setIsWishlistModalOpen(false);
           }}
         />
-      )}
-
-      <AddWishModal
-        wishlistId={wishlistId}
-        isOpen={isAddModalOpen}
-        setIsOpen={setIsAddModalOpen}
-        onWishAdded={() => {
-          refreshWishlist();
-        }}
-      />
-      {isOwner && selectedWish && isEditWishModalOpen && (
-        <EditWishModal
-          wishlistId={wishlist!._id}
-          wish={selectedWish}
-          isOpen={isEditWishModalOpen}
-          setIsOpen={setIsEditWishModalOpen}
-          onWishUpdated={handleWishUpdated}
-        />
-      )}
-      {selectedUser && (
-        <UserProfileModal
-          isOpen={isUserModalOpen}
-          onClose={() => setIsUserModalOpen(false)}
-          user={selectedUser}
-        />
-      )}
-    </main>
+        {isOwner && selectedWish && isEditWishModalOpen && (
+          <EditWishModal
+            wishlistId={wishlist!._id}
+            wish={selectedWish}
+            isOpen={isEditWishModalOpen}
+            setIsOpen={setIsEditWishModalOpen}
+            onWishUpdated={handleWishUpdated}
+          />
+        )}
+        {selectedUser && (
+          <UserProfileModal
+            isOpen={isUserModalOpen}
+            onClose={() => setIsUserModalOpen(false)}
+            user={selectedUser}
+          />
+        )}
+      </main>
     </>
   );
 }

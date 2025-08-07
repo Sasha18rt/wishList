@@ -2,9 +2,10 @@ import { ReactNode } from "react";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/libs/next-auth";
 import connectMongo from "@/libs/mongoose";
+import User from "@/models/User";
+
 import Wishlist from "@/models/Wishlist";
 import Reservation from "@/models/Reservations";
-
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
@@ -19,16 +20,16 @@ export async function GET(
     const currentUserId = session?.user?.id;
 
     // знаходимо Wishlist і відразу підтягуємо дані власника
-    const wishlist = await Wishlist.findById(id).populate(
-      "user_id",
-      "name email nickname image"
-    );
-
+    const wishlist = await Wishlist.findById(id).populate({
+      path: "user_id",
+      model: User, // 👈 підказуємо Mongoose, яку модель брати
+      select: "name email nickname image",
+    });
     if (!wishlist) {
-      return new Response(
-        JSON.stringify({ error: "Wishlist not found" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Wishlist not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     // визначаємо, чи це власник
@@ -37,10 +38,10 @@ export async function GET(
 
     // якщо не публічний і не власник — 403
     if (wishlist.visibility !== "public" && !isOwner) {
-      return new Response(
-        JSON.stringify({ error: "Wishlist is not public" }),
-        { status: 403, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Wishlist is not public" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     // далі — підтягуємо резервації і повертаємо результат
@@ -54,9 +55,9 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error fetching wishlist:", error);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }

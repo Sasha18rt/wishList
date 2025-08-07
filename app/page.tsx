@@ -1,9 +1,10 @@
-import { Suspense } from 'react'
+import { Suspense } from "react";
 import Header from "@/components/layout/Header";
 import Hero from "@/components/main/Hero";
 import FAQ from "@/components/main/FAQ";
 import CTA from "@/components/main/CTA";
 import Footer from "@/components/layout/Footer";
+import FeaturesAccordion from "@/components/main/FeaturesAccordion";
 
 export default function Home() {
   return (
@@ -12,10 +13,10 @@ export default function Home() {
         <Header />
       </Suspense>
       <main>
-<Hero></Hero>
+        <Hero />
+        {/* <FeaturesAccordion /> */}
         <CTA />
-        <FAQ></FAQ>
-
+        <FAQ />
       </main>
       <Footer />
     </>
