@@ -294,7 +294,15 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
         {/* Wishlist Owner Info */}
         {wishlist && (
           <section className="text-center">
-            <h1 className="text-6xl font-bold mt-2">{wishlist.title}</h1>
+            <h1 className="
+  mt-2 font-bold 
+  text-4xl sm:text-5xl md:text-6xl 
+  text-balance break-words hyphens-auto text-center
+  mx-auto max-w-[70ch]
+">
+  {wishlist.title}
+</h1>
+
             {isOwner ? null : (
               <div className="mt-4 text-left flex items-center justify-start space-x-2">
                 {wishlist.user_id.image ? (
