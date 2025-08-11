@@ -180,7 +180,7 @@ export default function WishesList({
   if (!items.length) {
     return (
       <div className="rounded-xl border bg-base-100 p-6 text-center text-base-content/70">
-        Поки що немає побажань.
+       There are no wishes yet.
       </div>
     );
   }
