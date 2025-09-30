@@ -9,7 +9,9 @@ const nextConfig = {
       "images.unsplash.com",
       "logos-world.net",
       "randomuser.me",
+      "res.cloudinary.com",
     ],
+    
   },
 };
 

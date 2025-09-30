@@ -2,7 +2,7 @@
 
 import useSWR, { mutate } from "swr";
 import { useRouter } from "next/navigation";
-import Image from "next/image"; // ✅ replace <img> with Next Image
+import React from "react";
 
 // Типи
 export type Reservation = {
@@ -17,8 +17,7 @@ export type Reservation = {
   note?: string | null;
 };
 
-// ✅ rename to avoid clash with component name
-type ReservationList = Reservation[];
+type ReservationList  = Reservation[];
 
 const KEY_RES = "/api/reservations";
 
@@ -50,7 +49,7 @@ export default function ReservationsList() {
     error: resError,
     isLoading: resLoading,
     isValidating: resValidating,
-  } = useSWR<ReservationList>(KEY_RES, fetcher, {
+  } = useSWR<ReservationList >(KEY_RES, fetcher, {
     revalidateOnFocus: true,
     keepPreviousData: true,
   });
@@ -69,7 +68,7 @@ export default function ReservationsList() {
     // оптимістично прибираємо з кешу по нормалізованому id
     mutate(
       KEY_RES,
-      (prev?: ReservationList) =>
+      (prev?: ReservationList ) =>
         prev ? prev.filter((r) => getReservationId(r) !== reservationId) : prev,
       false
     );
@@ -118,12 +117,11 @@ export default function ReservationsList() {
                 {/* Ліва частина: зображення (ховаємо на телефонах) */}
                 {r.wishImage && (
                   <div className="hidden sm:block w-24 h-24 flex-shrink-0 overflow-hidden rounded-lg bg-base-200">
-                    <Image
+                    <img
                       src={r.wishImage}
                       alt={r.wishTitle ?? "Gift image"}
-                      width={96}
-                      height={96}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
                     />
                   </div>
                 )}
