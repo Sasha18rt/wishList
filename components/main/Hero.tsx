@@ -10,10 +10,9 @@ const Hero = () => {
   const router = useRouter();
 
   const handleClick = () => {
-    if (session?.user) {
-     
+
       router.push("/dashboard");
-    }
+    
   };
 
   return (
