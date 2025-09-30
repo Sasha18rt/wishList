@@ -1,7 +1,7 @@
 // models/Wishlist.ts
 import mongoose from "mongoose";
-import User from "./User"; // 👈 гарантує, що модель User зареєстрована
-
+import User from "@/models/User"; // 👈 гарантує, що модель User зареєстрована
+import Wishlist from "@/models/Wishlist"
 const wishSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: String,

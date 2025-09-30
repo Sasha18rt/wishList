@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/libs/next-auth";
 import connectMongo from "@/libs/mongoose";
 import User from "@/models/User";
-
+import "@/models/Wishlist";
 // ---- Lean типи для безпечного .lean() ----
 type LeanWish = {
   image_url?: string | null;
