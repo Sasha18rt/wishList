@@ -42,7 +42,7 @@ const features: Feature[] = [
   path: "/res.mp4", // Next.js сам знає що це з public/
   format: "video/mp4",
   ctaLabel: "See how it works",
-  ctaHref: "/dashboard#reservations",
+  ctaHref: "https://wishlify.me/wishlist/67fe9f303b562e4837a288b1",
   svg: (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -71,7 +71,7 @@ const features: Feature[] = [
   format: "video/mp4",
     alt: "Quick add a wish",
     ctaLabel: "Add a gift",
-    ctaHref: "/dashboard#add-gift",
+    ctaHref: "/dashboard",
     svg: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" strokeWidth={1.5} stroke="currentColor" viewBox="0 0 24 24" className="w-6 h-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m6-6H6"/>
@@ -88,7 +88,7 @@ const features: Feature[] = [
   format: "video/mp4",
     alt: "Share wishlist easily",
     ctaLabel: "Share wishlist",
-    ctaHref: "/dashboard#share",
+    ctaHref: "/dashboard",
     svg: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" strokeWidth={1.5} stroke="currentColor" viewBox="0 0 24 24" className="w-6 h-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 12a4.5 4.5 0 1 1 4.24-5.74M16.5 12a4.5 4.5 0 1 0-4.24 5.74M8.25 12h7.5"/>
