@@ -66,7 +66,7 @@ const ReservationSection = memo(function ReservationSection({
     return (
       <button
         type="button"
-        className="btn btn-sm btn-error normal-case mt-2"
+        className="btn btn-sm btn-accent normal-case mt-2"
         onClick={() => onCancel(wishId)}
       >
         Cancel reservation
@@ -147,40 +147,78 @@ export default function WishesList({
 
   // Форматери
   const fmtDate = useCallback(
-    (d: string) =>
-      new Intl.DateTimeFormat("lt-LT", {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-      }).format(new Date(d)),
+    (d?: string) =>
+      d
+        ? new Intl.DateTimeFormat("lt-LT", {
+            year: "numeric",
+            month: "short",
+            day: "2-digit",
+          }).format(new Date(d))
+        : "",
     []
   );
 
-  const fmtPrice = useCallback((p?: string) => {
-    if (!p) return "";
-    const n = Number(p);
-    if (Number.isFinite(n)) {
-      try {
-        return new Intl.NumberFormat("lt-LT", {
-          style: "currency",
-          currency: "EUR",
-        }).format(n);
-      } catch {
-        /* ignore */
-      }
-    }
-    return `€${p}`; // фолбек якщо прийшов текст типу "15-20"
-  }, []);
+  // НОВЕ: форматер ціни з окремою валютою
+  const fmtPrice = useCallback((p?: string, c?: string) => {
+  if (!p) return "";
+  const n = Number(p);
+  const code = (c && /^[A-Z]{3}$/.test(c) ? c : "EUR") as
+    | "EUR" | "USD" | "GBP" | "CAD" | "UAH" | "PLN" | "CZK" | "TRY";
+
+  // якщо не число — показуємо як "15-20 (USD)"
+  if (!Number.isFinite(n)) return c ? `${p} (${c})` : p;
+
+  // 1) спроба з normal symbol
+  let parts = new Intl.NumberFormat("lt-LT", {
+    style: "currency",
+    currency: code,
+    currencyDisplay: "symbol",
+    maximumFractionDigits: 2,
+  }).formatToParts(n);
+  let currPart = parts.find((x) => x.type === "currency")?.value;
+
+  // 2) якщо показав код (USD/GBP/...), пробуємо narrowSymbol
+  if (!currPart || currPart.toUpperCase() === code) {
+    parts = new Intl.NumberFormat("lt-LT", {
+      style: "currency",
+      currency: code,
+      currencyDisplay: "narrowSymbol",
+      maximumFractionDigits: 2,
+    }).formatToParts(n);
+    currPart = parts.find((x) => x.type === "currency")?.value;
+  }
+
+  // 3) мапінг фолбеків
+  const FALLBACK: Record<string, string> = {
+    USD: "$",
+    EUR: "€",
+    GBP: "£",
+    CAD: "CA$",
+    UAH: "₴",
+    PLN: "zł",
+    CZK: "Kč",
+    TRY: "₺",
+  };
+  const symbol = currPart && currPart.toUpperCase() !== code ? currPart : FALLBACK[code] || code;
+
+  // зліпимо рядок із заміною currency-part на обраний символ
+  const withSymbol = parts
+    .map((p) => (p.type === "currency" ? symbol : p.value))
+    .join("");
+
+  return withSymbol;
+}, []);
+
 
   const safeExternalLink = (url?: string) =>
     !!url && /^https?:\/\//i.test(url);
 
-  const items = wishlist.wishes.slice(0, Math.max(0, visibleCount));
+  const items = (wishlist.wishes || []).slice(0, Math.max(0, visibleCount));
 
   if (!items.length) {
     return (
       <div className="rounded-xl border bg-base-100 p-6 text-center text-base-content/70">
-       There are no wishes yet.
+        There are no wishes yet.
       </div>
     );
   }
@@ -196,11 +234,13 @@ export default function WishesList({
         const CoreInfo = (
           <>
             <h3 className="text-lg font-semibold">{wish.name}</h3>
+
             {wish.description && (
               <p className="text-sm text-base-content/70">
                 {wish.description}
               </p>
             )}
+
             {safeExternalLink(wish.product_url) && (
               <a
                 href={wish.product_url}
@@ -212,9 +252,15 @@ export default function WishesList({
                 View product ↗
               </a>
             )}
-            {wish.price && <p className="text-sm">💰 {fmtPrice(wish.price)}</p>}
+
+            {wish.price && (
+              <p className="text-sm">
+                💰 {fmtPrice(wish.price, (wish as any).currency)}
+              </p>
+            )}
+
             <p className="text-xs text-base-content/60">
-              Added: {fmtDate(wish.added_at)}
+              Added: {fmtDate((wish as any).added_at)}
             </p>
           </>
         );

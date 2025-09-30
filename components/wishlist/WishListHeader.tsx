@@ -23,28 +23,7 @@ const WishlistHeader = ({
   onAddWish,
   userMenu,
 }: Props) => {
-  const handleShare = async () => {
-    const url = window.location.href;
-  
-    if (navigator.share && window.innerWidth < 768) {
-      try {
-        await navigator.share({
-          title: "Check out this wishlist!",
-          text: "Take a look at this wishlist I made 🎁",
-          url,
-        });
-      } catch (err) {
-        toast.error("Sharing canceled or failed.");
-      }
-    } else {
-      try {
-        await navigator.clipboard.writeText(url);
-        toast.success("Link copied to clipboard!");
-      } catch {
-        toast.error("Failed to copy link.");
-      }
-    }
-  };
+
   
 
   return (

@@ -1,99 +1,105 @@
 "use client";
-import React from "react";
 
-
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import EditWishlistModal from "./EditWishlistModal";
 import { Settings } from "lucide-react";
+import type { Wishlist } from "@/app/dashboard/page";
 
-interface Wishlist {
-  _id: string;
-  title: string;
-  theme: string;
-  visibility: string;
-  created_at: string;
-}
+type Props = {
+  wishlists: Wishlist[];
+  isLoading: boolean;
+  setWishlists: React.Dispatch<React.SetStateAction<Wishlist[]>>;
+  onSelectWishlist: (id: string) => void;
+};
 
 export default function WishlistList({
   wishlists,
+  isLoading,
   setWishlists,
   onSelectWishlist,
-}: {
-  wishlists: Wishlist[];
-  setWishlists: React.Dispatch<React.SetStateAction<Wishlist[]>>;
-  onSelectWishlist: (id: string) => void;
-}) {
+}: Props) {
   const [selectedWishlist, setSelectedWishlist] = useState<Wishlist | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    setLoading(false);
-  }, [wishlists]);
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="skeleton h-28 w-full rounded-xl" />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-semibold">Your Wishlists</h2>
-      {loading ? (
-        <span className="loading loading-spinner loading-xl"></span>
-      ) : !(wishlists.length === 0) ? (
-       
+
+      {wishlists.length > 0 ? (
         <ul className="space-y-2">
-          {wishlists.map((wishlist) => (
+          {wishlists.map((w) => (
             <li
-              key={wishlist._id}
-              className="relative p-4 border rounded-lg bg-base-100 shadow-md flex flex-col gap-2 transition-all hover:bg-gray-100"
+              key={w._id}
+              onClick={() => onSelectWishlist(w._id)}
+              className="relative group flex flex-col gap-2 p-4 rounded-xl border border-base-300 
+                         bg-base-100 shadow-sm hover:shadow-lg hover:border-primary/50 
+                         transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
             >
-              {/* Settings (edit) button */}
+              {/* Edit (іконка зверху справа) */}
               <button
-                onClick={() => {
-                  setSelectedWishlist(wishlist);
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedWishlist(w);
                   setIsModalOpen(true);
                 }}
-                className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 transition-all"
+                className="absolute top-3 right-3 text-base-content/60 hover:text-base-content transition-colors"
                 aria-label="Edit wishlist"
               >
                 <Settings className="w-5 h-5" />
               </button>
 
-              {/* Click to open */}
-              <button
-                onClick={() => onSelectWishlist(wishlist._id)}
-                className="text-left w-full group"
-              >
-                <h3 className="text-lg font-bold group-hover:text-gray-800 transition-all">
-                  {wishlist.title}
+              {/* Info */}
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold group-hover:text-primary transition-colors">
+                  {w.title}
                 </h3>
-                <p className="text-sm group-hover:text-gray-700 transition-all">
-                  Theme: {wishlist.theme}
-                </p>
-                <p className="text-sm group-hover:text-gray-700 transition-all">
-                  Visibility: {wishlist.visibility}
-                </p>
-                <p className="text-xs text-gray-500">
-                  Created: {new Date(wishlist.created_at).toLocaleDateString()}
-                </p>
-              </button>
+                {w.theme && <p className="text-sm text-base-content/70">Theme: {w.theme}</p>}
+                {w.visibility && (
+                  <p className="text-sm text-base-content/70">Visibility: {w.visibility}</p>
+                )}
+                {(w.createdAt || w.created_at) && (
+                  <p className="text-xs text-base-content/60">
+                    Created:{" "}
+                    {new Date(w.createdAt ?? w.created_at!).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
             </li>
           ))}
         </ul>
-      ) : null}
+      ) : (
+        <div className="text-center border border-dashed border-base-300 rounded-2xl p-10">
+          <h3 className="text-xl font-semibold mb-2">No wishlists yet</h3>
+          <p className="text-base-content/70">
+            Start by creating your first wishlist.
+          </p>
+        </div>
+      )}
 
-      {/* Modal for editing */}
       {selectedWishlist && (
         <EditWishlistModal
           wishlistId={selectedWishlist._id}
           initialTitle={selectedWishlist.title}
-          initialTheme={selectedWishlist.theme}
-          initialVisibility={selectedWishlist.visibility}
+          initialTheme={selectedWishlist.theme ?? ""}
+          initialVisibility={String(selectedWishlist.visibility ?? "private")}
           isOpen={isModalOpen}
           setIsOpen={setIsModalOpen}
-          onUpdate={(updated) => {
+          onUpdate={(updated: any) => {
             if ("deleted" in updated && updated.deleted) {
-              setWishlists((prev) => prev.filter((w) => w._id !== updated._id));
+              setWishlists((prev) => prev.filter((x) => x._id !== updated._id));
             } else {
               setWishlists((prev) =>
-                prev.map((w) => (w._id === updated._id ? updated : w))
+                prev.map((x) => (x._id === updated._id ? { ...x, ...updated } : x))
               );
             }
             setIsModalOpen(false);

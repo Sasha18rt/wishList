@@ -19,47 +19,70 @@ export async function GET(
     await connectMongo();
     const session = await getServerSession(authOptions);
     if (!session) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { 
-        status: 401, 
-        headers: { "Content-Type": "application/json" } 
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
-      return new Response(JSON.stringify({ error: "User not found" }), { 
-        status: 404, 
-        headers: { "Content-Type": "application/json" } 
+      return new Response(JSON.stringify({ error: "User not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
-    const wishlist = await Wishlist.findOne({ _id: params.id, user_id: user._id });
+    const wishlist = await Wishlist.findOne({
+      _id: params.id,
+      user_id: user._id,
+    });
     if (!wishlist) {
-      return new Response(JSON.stringify({ error: "Wishlist not found" }), { 
-        status: 404, 
-        headers: { "Content-Type": "application/json" } 
+      return new Response(JSON.stringify({ error: "Wishlist not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
       });
     }
+
+    // 👇 додаємо в recentlyViewed (з обмеженням, наприклад 10 останніх)
+    await User.updateOne(
+      { _id: user._id },
+      {
+        $pull: { recentlyViewed: { wishlistId: wishlist._id } }, // прибрати старий запис
+      }
+    );
+    await User.updateOne(
+      { _id: user._id },
+      {
+        $push: {
+          recentlyViewed: {
+            $each: [{ wishlistId: wishlist._id, viewedAt: new Date() }],
+            $position: 0,
+            $slice: 10, // максимум 10 останніх
+          },
+        },
+      }
+    );
 
     // Query reservations from the Reservation collection for this wishlist
     const reservations = await Reservations.find({ wishlist_id: params.id });
 
-    // Convert wishlist to a plain object and attach the reservations array
     const wishlistData = wishlist.toObject();
     wishlistData.reservations = reservations;
 
-    return new Response(JSON.stringify(wishlistData), { 
-      status: 200, 
-      headers: { "Content-Type": "application/json" } 
+    return new Response(JSON.stringify(wishlistData), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
     console.error("Error fetching wishlist:", error);
-    return new Response(JSON.stringify({ error: "Internal server error" }), { 
-      status: 500, 
-      headers: { "Content-Type": "application/json" } 
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
     });
   }
 }
+
 
 /**
  * @desc Update a specific wishlist by ID

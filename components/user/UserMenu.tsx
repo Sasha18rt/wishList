@@ -70,7 +70,7 @@ export default function UserMenu() {
   
     <a href="/dashboard" className="flex items-center gap-2">
       <List className="w-4 h-4" />
-      My Wishlists
+     Dashboard
     </a>
   
 </li>

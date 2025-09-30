@@ -9,6 +9,11 @@ const wishSchema = new mongoose.Schema({
   image_public_id: String,
   product_url: String,
   price: String,
+  currency: {
+    type: String,
+    trim: true,
+    default: "EUR", 
+  },
   added_at: { type: Date, default: Date.now },
 });
 

@@ -2,7 +2,7 @@
 
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment, useState, useEffect } from "react";
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useSession} from "next-auth/react";
 import toast from "react-hot-toast";
 
 interface UserProfile {

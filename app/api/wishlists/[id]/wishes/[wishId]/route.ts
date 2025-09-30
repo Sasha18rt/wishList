@@ -13,6 +13,21 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
+
+/**
+ * PUT /api/wishlists/:id/wishes/:wishId
+ * Оновлює один wish (тепер можна передавати currency)
+ */
+interface WishUpdatePayload {
+  name?: string;
+  description?: string;
+  product_url?: string;
+  price?: string;          // рядок або ""
+  currency?: string | null; // 3-літерний код або null
+  image_url?: string | null;
+  image_public_id?: string | null;
+}
+
 export async function PUT(
   req: Request,
   { params }: { params: { id: string; wishId: string } }
@@ -20,19 +35,16 @@ export async function PUT(
   try {
     await connectMongo();
 
-    // — Перевірка автентифікації
     const session = await getServerSession(authOptions);
-    if (!session) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // — Знаходимо користувача
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // — Знаходимо wishlist і конкретний wish
     const wishlist = await Wishlist.findOne({
       _id: params.id,
       user_id: user._id,
@@ -48,9 +60,11 @@ export async function PUT(
       return NextResponse.json({ error: "Wish not found" }, { status: 404 });
     }
 
-    // — Парсимо JSON-тіло запиту (без multipart/form-data)
-    const data = await req.json();
-    const parsed = wishSchema.safeParse(data);
+    // ---------- Парсимо/валідуємо вхід ----------
+    const raw = (await req.json()) as WishUpdatePayload;
+
+    // Клієнтська схема: переконайся, що вона містить currency
+    const parsed = wishSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.errors[0].message },
@@ -58,88 +72,117 @@ export async function PUT(
       );
     }
 
-    const {
-      name,
-      description,
-      product_url,
-      price,
-      image_url,
-      image_public_id,
-    } = parsed.data;
+    // Нормалізація вхідних полів
+    const name = typeof parsed.data.name === "string" ? parsed.data.name.trim() : undefined;
+    const description =
+      typeof parsed.data.description === "string" ? parsed.data.description : undefined;
+    const product_url =
+      typeof parsed.data.product_url === "string" ? parsed.data.product_url : undefined;
 
-    // — Якщо прийшла нова картинка, що відрізняється від старої, видаляємо стару
+    const priceIn = typeof parsed.data.price === "string" ? parsed.data.price.trim() : "";
+    // якщо хочеш зберігати null у БД для пустої ціни — постав priceDb = null замість ""
+    const priceDb: string | null = priceIn === "" ? "" : String(priceIn);
+
+    // Валюта: upcase + валідація коду
+    let currencyIn =
+      typeof parsed.data.currency === "string" ? parsed.data.currency.trim().toUpperCase() : null;
+
+    // Узгодженість: якщо є ціна → валюта обов’язкова; якщо ціни нема → валюта = null
+    if (priceIn) {
+      if (!currencyIn || !/^[A-Z]{3}$/.test(currencyIn)) {
+        return NextResponse.json(
+          { error: "Currency is required and must be a 3-letter code when price is set" },
+          { status: 400 }
+        );
+      }
+    } else {
+      currencyIn = null;
+    }
+
+    const image_url =
+      typeof parsed.data.image_url === "string" && parsed.data.image_url
+        ? parsed.data.image_url
+        : parsed.data.image_url === null
+        ? null
+        : undefined;
+
+    const image_public_id =
+      typeof parsed.data.image_public_id === "string" && parsed.data.image_public_id
+        ? parsed.data.image_public_id
+        : parsed.data.image_public_id === null
+        ? null
+        : undefined;
+
+    // ---------- Видалення старого зображення (якщо змінено public_id) ----------
     if (
-      image_url &&
-      image_public_id &&
+      image_url !== undefined &&
+      image_public_id !== undefined &&
       wish.image_public_id &&
+      image_public_id &&
       wish.image_public_id !== image_public_id
     ) {
       try {
-        await cloudinary.uploader.destroy(wish.image_public_id);
+        // await cloudinary.uploader.destroy(wish.image_public_id);
       } catch (err) {
         console.warn("Failed to delete old image", err);
       }
     }
 
-    // — Оновлюємо тільки ті поля, що прийшли в запиті
-    if (name !== undefined)              wish.name = name;
-    if (description !== undefined)       wish.description = description;
-    if (product_url !== undefined)       wish.product_url = product_url;
-    // для price: порожній рядок приводимо в null
-    if (price !== undefined)             wish.price = price === "" ? null : price;
-    // для зображень: якщо нема в запиті — лишаємо старі
-    if (image_url !== undefined)         wish.image_url = image_url || null;
-    if (image_public_id !== undefined)   wish.image_public_id = image_public_id || null;
+    // ---------- Оновлюємо поля ----------
+    if (name !== undefined) wish.name = name;
+    if (description !== undefined) wish.description = description;
+    if (product_url !== undefined) wish.product_url = product_url;
 
-    // — Зберігаємо оновлений wishlist
+    if (priceDb !== null) {
+      // збережемо як РЯДОК або "" (консистентно з POST)
+      wish.price = priceDb; // або: priceIn === "" ? null : priceIn
+    }
+    // Валюта оновлюється незалежно, але узгоджено з ціною (див. нормалізацію вище)
+    wish.currency = currencyIn;
+
+    if (image_url !== undefined) wish.image_url = image_url; // string | null
+    if (image_public_id !== undefined) wish.image_public_id = image_public_id; // string | null
+
     await wishlist.save();
 
-    return NextResponse.json(wish.toObject(), { status: 200 });
+    // ---------- Нормалізуємо відповідь для фронта ----------
+    const updated = wish.toObject();
+    return NextResponse.json(
+      {
+        ...updated,
+        price: updated.price?.toString?.() ?? "",
+        currency: updated.currency ?? null,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Error updating wish:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-
 /**
- * @desc Delete a specific wish from a wishlist
- * @route DELETE /api/wishlists/:id/wishes/:wishId
- * @access Private (Authenticated Users)
+ * DELETE /api/wishlists/:id/wishes/:wishId
+ * Видаляє конкретний wish (разом з картинкою, якщо була)
  */
-
-import { Readable } from "stream";
-
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
-  api_key: process.env.CLOUDINARY_API_KEY!,
-  api_secret: process.env.CLOUDINARY_API_SECRET!,
-});
-
 export async function DELETE(
-  req: Request,
+  _req: Request,
   { params }: { params: { id: string; wishId: string } }
 ) {
   try {
     await connectMongo();
 
     const session = await getServerSession(authOptions);
-    if (!session) {
-      return new NextResponse(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401 }
-      );
+    if (!session?.user?.email) {
+      return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+      });
     }
 
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
-      return new NextResponse(
-        JSON.stringify({ error: "User not found" }),
-        { status: 404 }
-      );
+      return new NextResponse(JSON.stringify({ error: "User not found" }), {
+        status: 404,
+      });
     }
 
     const wishlist = await Wishlist.findOne({
@@ -147,23 +190,19 @@ export async function DELETE(
       user_id: user._id,
     });
     if (!wishlist) {
-      return new NextResponse(
-        JSON.stringify({ error: "Wishlist not found" }),
-        { status: 404 }
-      );
+      return new NextResponse(JSON.stringify({ error: "Wishlist not found" }), {
+        status: 404,
+      });
     }
 
     const wish = wishlist.wishes.find(
-      (wish: any) => wish._id.toString() === params.wishId
+      (w: any) => w._id.toString() === params.wishId
     );
     if (!wish) {
-      return new NextResponse(
-        JSON.stringify({ error: "Wish not found" }),
-        { status: 404 }
-      );
+      return new NextResponse(JSON.stringify({ error: "Wish not found" }), {
+        status: 404,
+      });
     }
-
-    //If the wish contains image_public_id, delete the image from Cloudinary
 
     if (wish.image_public_id) {
       try {
