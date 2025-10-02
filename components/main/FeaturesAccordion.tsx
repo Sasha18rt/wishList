@@ -84,7 +84,7 @@ const features: Feature[] = [
     description:
       "Generate a link or QR code and share with friends. No registration needed for guests — just open, view, reserve.",
      type: "video", // <-- змінюємо на image
-  path: "/shere1.mp4", // Next.js сам знає що це з public/
+  path: "/share1.mp4", // Next.js сам знає що це з public/
   format: "video/mp4",
     alt: "Share wishlist easily",
     ctaLabel: "Share wishlist",
