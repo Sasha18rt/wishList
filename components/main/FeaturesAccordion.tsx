@@ -203,7 +203,7 @@ const FeaturesAccordion = (): JSX.Element => {
   const sectionId = useId();
 
   return (
-    <section className="py-20 md:py-28 bg-base-200" id="features">
+    <section className="py-20 md:py-28 bg-base-300" id="features">
       <div className="max-w-7xl mx-auto px-6">
         <div className="px-6 md:px-8">
           <h2 className="font-extrabold text-4xl lg:text-6xl tracking-tight mb-10 md:mb-16">
