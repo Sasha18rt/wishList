@@ -170,33 +170,42 @@ const Item = ({
 const Media = ({ feature }: { feature: Feature }) => {
   const { type, path, format, alt } = feature;
   const style = `
-  w-full 
-  h-[400px] 
-  object-cover 
-  object-top
-  rounded-xl 
-  shadow-lg 
-  border 
-  border-base-300 
-  bg-base-100 
-`;
-
-  const size = { width: 500, height: 400 };
+    w-full 
+    rounded-xl 
+    shadow-lg 
+    border 
+    border-base-300 
+    bg-base-100
+  `;
 
   if (type === "video" && path) {
     return (
-      <video className={style} autoPlay muted loop playsInline controls width={size.width} height={size.height}>
+      <video
+        className={`${style} object-contain sm:object-cover max-h-[500px]`}
+        autoPlay
+        muted
+        loop
+        playsInline
+        controls
+      >
         <source src={path} type={format} />
       </video>
     );
   }
   if (type === "image" && path) {
     return (
-      <Image src={path} alt={alt ?? "Feature preview"} className={`${style} object-cover object-center`} width={size.width} height={size.height} />
+      <Image
+        src={path}
+        alt={alt ?? "Feature preview"}
+        width={800}
+        height={600}
+        className={`${style} object-contain sm:object-cover max-h-[500px]`}
+      />
     );
   }
   return <div className={`${style} bg-base-200`}></div>;
 };
+
 
 const FeaturesAccordion = (): JSX.Element => {
   const [featureSelected, setFeatureSelected] = useState<number>(0);
