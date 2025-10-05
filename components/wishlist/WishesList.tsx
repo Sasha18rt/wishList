@@ -271,7 +271,7 @@ useEffect(() => {
       role="list"
       className={clsx(
         viewMode === "gallery"
-          ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
+          ? "grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
           : viewMode === "grid"
           ? "grid grid-cols-2 sm:grid-cols-2 gap-4"
           : "space-y-4"
