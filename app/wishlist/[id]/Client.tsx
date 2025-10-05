@@ -34,7 +34,7 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
 
   const [isEditWishModalOpen, setIsEditWishModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"List" | " Grid" | "gallery">("List");
+  const [viewMode, setViewMode] = useState<"list" | "grid" | "gallery">("list");
 
   
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -48,8 +48,8 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 const viewModes = [
-  { id: "List", label: "List", icon: Rows3 },
-  { id: " Grid", label: " Grid", icon: LayoutGrid },
+  { id: "list", label: "List", icon: Rows3 },
+  { id: "grid", label: "Grid", icon: LayoutGrid },
   { id: "gallery", label: "Gallery", icon: Images },
 ] as const;
 
