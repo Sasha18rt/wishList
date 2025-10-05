@@ -1,5 +1,6 @@
+// /app/api/og/wishlist/[id]/route.ts
 import { ImageResponse } from "@vercel/og";
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import connectMongo from "@/libs/mongoose";
 import Wishlist from "@/models/Wishlist";
 
@@ -12,143 +13,295 @@ export async function GET(
   try {
     await connectMongo();
 
-    const wishlist = await Wishlist.findById(params.id)
-      .populate("user_id", "name email")
+    const id = params.id;
+    if (!id || !/^[a-f\d]{24}$/i.test(id)) {
+      return new Response("Bad id", { status: 400 });
+    }
+
+    const wishlist = await Wishlist.findById(id)
+      .select("title user_id wishes visibility")
+      .populate("user_id", "name email image")
       .lean();
 
     if (!wishlist) return new Response("Not found", { status: 404 });
+
+    const baseUrl = req.nextUrl.origin;
 
     const ownerName =
       (wishlist as any).user_id?.name ||
       (wishlist as any).user_id?.email ||
       "Anonymous";
 
-    const ownerInitial = ownerName[0]?.toUpperCase() || "A";
+    const ownerInitial = (ownerName[0] || "A").toUpperCase();
 
-    return new ImageResponse(
-      (
+    const rawUserImage: string | undefined = (wishlist as any).user_id?.image || undefined;
+    const userImage =
+      rawUserImage && /^https?:\/\//i.test(rawUserImage)
+        ? rawUserImage
+        : rawUserImage
+        ? `${baseUrl}${rawUserImage.startsWith("/") ? "" : "/"}${rawUserImage}`
+        : undefined;
+
+    const title: string = (wishlist as any).title || "Wishlist";
+    const visibility: string = (wishlist as any).visibility || "private";
+    const isPublic = visibility === "public";
+
+    const wishes = Array.isArray((wishlist as any).wishes)
+      ? (wishlist as any).wishes
+      : [];
+    const wishesCount = wishes.length;
+
+    const pageUrl = `${baseUrl}/wishlist/${id}`;
+    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(
+      pageUrl
+    )}`;
+
+    const len = title.length;
+    const titleFontSize = len > 60 ? 64 : len > 36 ? 80 : 96;
+
+    const root = (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          width: "100%",
+          background: "linear-gradient(135deg, #0f172a, #1e293b)",
+          color: "#f8fafc",
+          padding: 56,
+          fontFamily:
+            "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+        }}
+      >
+        {/* Заголовок + лінія */}
         <div
           style={{
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            justifyContent: "center",
-            height: "100%",
-            width: "100%",
-            background: "linear-gradient(135deg, #0f172a, #1e293b)",
-            color: "#f8fafc",
-            padding: "60px",
-            fontFamily:
-              "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
             textAlign: "center",
+            gap: 12,
+            marginTop: 4,
           }}
         >
-          {/* Заголовок */}
           <div
             style={{
-              display: "flex",
-              justifyContent: "center",
-              fontSize: 100,
+              fontSize: titleFontSize,
               fontWeight: 1000,
-              marginBottom: 12,
-              color: "#fff",
-              maxWidth: "90%",
+              lineHeight: 1.05,
+              maxWidth: 980,
               overflow: "hidden",
               textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              textShadow: "0 0 40px rgba(250, 204, 21, 0.4)",
             }}
           >
-            {(wishlist as any).title}
+            {title}
           </div>
 
-          {/* Акцентна лінія */}
           <div
             style={{
               display: "flex",
               height: 4,
-              width: 160,
+              width: 180,
               borderRadius: 2,
-              marginBottom: 28,
               background: "linear-gradient(to right, #facc15, #f472b6)",
+              boxShadow: "0 0 24px rgba(255,255,255,0.25)",
             }}
           />
+        </div>
 
-          {/* Аватар + ім’я */}
+        {/* Автор + бейджі */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 14,
+            marginTop: 24,
+          }}
+        >
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
               gap: 16,
-              marginBottom: 32,
             }}
           >
+            {userImage ? (
+              <img
+                src={userImage}
+                width={72}
+                height={72}
+                alt={ownerName}
+                style={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  boxShadow: "0 6px 24px rgba(0,0,0,0.35)",
+                  border: "3px solid rgba(255,255,255,0.65)",
+                  background: "#0f172a",
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 72,
+                  height: 72,
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #facc15, #f472b6)",
+                  color: "#0f172a",
+                  fontSize: 36,
+                  fontWeight: 800,
+                  boxShadow: "0 6px 24px rgba(0,0,0,0.35)",
+                }}
+              >
+                {ownerInitial}
+              </div>
+            )}
+
+            {/* !!! ЄДИНИЙ текстовий вузол, без "by " + {ownerName} */}
             <div
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 72,
-                height: 72,
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, #facc15, #f472b6)",
-                fontSize: 36,
-                fontWeight: 700,
-                color: "#0f172a",
-              }}
-            >
-              {ownerInitial}
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
                 fontSize: 28,
-                opacity: 0.9,
+                opacity: 0.92,
               }}
             >
-              by {ownerName}
+              {"by " + ownerName}
             </div>
           </div>
 
-          {/* Підзаголовок */}
           <div
             style={{
               display: "flex",
-              justifyContent: "center",
-              fontSize: 22,
-              padding: "8px 20px",
-              borderRadius: 999,
-              background: "rgba(255,255,255,0.08)",
-              marginBottom: 40,
+              gap: 12,
+              marginTop: 4,
             }}
           >
-            A wishlist made with ❤️ on Wishlify
-          </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                fontSize: 20,
+                padding: "6px 12px",
+                borderRadius: 999,
+                background: isPublic
+                  ? "rgba(34,197,94,0.18)"
+                  : "rgba(248,113,113,0.18)",
+                color: isPublic ? "#86efac" : "#fecaca",
+                border: "1px solid rgba(255,255,255,0.15)",
+              }}
+            >
+              {isPublic ? "Public" : "Private"}
+            </div>
 
-          {/* Футер */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              fontSize: 22,
-              opacity: 0.7,
-              borderTop: "1px solid rgba(255,255,255,0.2)",
-              paddingTop: 20,
-              WebkitBackgroundClip: "text",
-            }}
-          >
-            wishlify.me
+            {/* !!! Також один текстовий вузол */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                fontSize: 20,
+                padding: "6px 12px",
+                borderRadius: 999,
+                background: "rgba(255,255,255,0.10)",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.15)",
+              }}
+            >
+              {`${wishesCount} ${wishesCount === 1 ? "wish" : "wishes"}`}
+            </div>
           </div>
         </div>
-      ),
-      {
-        width: 1200,
-        height: 630,
-      }
+
+        {/* Підзаголовок */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            fontSize: 22,
+            padding: "8px 20px",
+            borderRadius: 999,
+            background: "rgba(255,255,255,0.08)",
+            marginTop: 32,
+          }}
+        >
+          {/* один вузол */}
+          {"Wishlist made with ❤️ on Wishlify"}
+        </div>
+
+        {/* Футер із QR та URL */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+            paddingTop: 18,
+            borderTop: "1px solid rgba(255,255,255,0.25)",
+            marginTop: "auto",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <img
+              src={qrSrc}
+              width={120}
+              height={120}
+              alt="QR"
+              style={{
+                width: 120,
+                height: 120,
+                borderRadius: 10,
+                background: "#fff",
+                padding: 6,
+                boxShadow: "0 6px 24px rgba(0,0,0,0.35)",
+              }}
+            />
+
+            <div
+              style={{
+                fontSize: 18,
+                opacity: 0.85,
+                maxWidth: 520,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {pageUrl}
+            </div>
+          </div>
+
+          <div
+            style={{
+              fontSize: 22,
+              opacity: 0.85,
+            }}
+          >
+            {"wishlify.me"}
+          </div>
+        </div>
+      </div>
     );
-  } catch (err) {
+
+    return new ImageResponse(root, {
+      width: 1200,
+      height: 630,
+      headers: {
+        "Cache-Control":
+          "public, s-maxage=3600, stale-while-revalidate=86400",
+      },
+    });
+  } catch (err: any) {
+    if (err?.name === "CastError") {
+      return new Response("Bad id", { status: 400 });
+    }
     console.error("OG image error:", err);
     return new Response("Internal Server Error", { status: 500 });
   }

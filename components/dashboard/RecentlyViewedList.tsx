@@ -119,7 +119,8 @@ export default function RecentlyViewedList() {
           className="text-center text-xs text-base-content/60"
           aria-live="polite"
         >
-          Updating…
+                  <span className="loading loading-spinner loading-xl"></span>
+
         </div>
       )}
     </section>

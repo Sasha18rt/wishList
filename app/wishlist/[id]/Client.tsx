@@ -12,9 +12,11 @@ import UserProfileModal from "@/components/user/UserProfileModal";
 import WishlistHeader from "@/components/wishlist/WishListHeader";
 import UserMenu from "@/components/user/UserMenu";
 import type { Wish, Reservation, WishlistData } from "@/types/wishlist";
+import { LayoutGrid, LayoutList, Rows3, Images } from "lucide-react"; // icons
 
 import React from "react";
 import WishesList from "@/components/wishlist/WishesList";
+import clsx from "clsx";
 interface WishlistPageProps {
   serverWishlist: any;
 }
@@ -32,17 +34,24 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
 
   const [isEditWishModalOpen, setIsEditWishModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"split" | "card">("split");
+  const [viewMode, setViewMode] = useState<"List" | " Grid" | "gallery">("List");
+
+  
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   // State mapping each wish's ID to its reserved user's name
   const [reservationUsers, setReservationUsers] = useState<
     Record<string, string>
   >({});
   // State for pagination
-  const [visibleCount, setVisibleCount] = useState<number>(10);
+  const [visibleCount, setVisibleCount] = useState<number>(20);
 
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+const viewModes = [
+  { id: "List", label: "List", icon: Rows3 },
+  { id: " Grid", label: " Grid", icon: LayoutGrid },
+  { id: "gallery", label: "Gallery", icon: Images },
+] as const;
 
   const handleShowUserInfo = async (
     userId: string,
@@ -231,35 +240,40 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
     }
     toast.success("Reservation cancelled");
     setWishlist((w) =>
-  w
-    ? {
-        ...w,
-        reservations: (w.reservations || []).filter((r) => r.wish_id !== wishId),
-      }
-    : w
-);
+      w
+        ? {
+            ...w,
+            reservations: (w.reservations || []).filter(
+              (r) => r.wish_id !== wishId
+            ),
+          }
+        : w
+    );
   };
   // Update a wish after editing
- const handleWishUpdated = (updatedWish: Wish, event?: React.MouseEvent<HTMLButtonElement>) => {
-  (event?.currentTarget as HTMLButtonElement)?.blur();
+  const handleWishUpdated = (
+    updatedWish: Wish,
+    event?: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    (event?.currentTarget as HTMLButtonElement)?.blur();
 
-  if (updatedWish.deleted) {
-    setWishlist((prev) => ({
-      ...prev!,
-      wishes: prev!.wishes.filter((w) => w._id !== updatedWish._id),
-    }));
-  } else if (wishlist) {
-    setWishlist({
-      ...wishlist,
-      wishes: wishlist.wishes.map((wish) =>
-        wish._id === updatedWish._id ? updatedWish : wish
-      ),
-    });
-  }
+    if (updatedWish.deleted) {
+      setWishlist((prev) => ({
+        ...prev!,
+        wishes: prev!.wishes.filter((w) => w._id !== updatedWish._id),
+      }));
+    } else if (wishlist) {
+      setWishlist({
+        ...wishlist,
+        wishes: wishlist.wishes.map((wish) =>
+          wish._id === updatedWish._id ? updatedWish : wish
+        ),
+      });
+    }
 
-  setIsEditWishModalOpen(false);
-  setSelectedWish(null);
-};
+    setIsEditWishModalOpen(false);
+    setSelectedWish(null);
+  };
 
   if (!wishlistId)
     return <p className="text-center text-lg text-error">Missing ID</p>;
@@ -294,14 +308,16 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
         {/* Wishlist Owner Info */}
         {wishlist && (
           <section className="text-center">
-            <h1 className="
-  mt-2 font-bold 
-  text-4xl sm:text-5xl md:text-6xl 
-  text-balance break-words hyphens-auto text-center
-  mx-auto max-w-[70ch]
-">
-  {wishlist.title}
-</h1>
+            <h1
+              className="
+              mt-2 font-bold 
+              text-4xl sm:text-5xl md:text-6xl 
+              text-balance break-words hyphens-auto text-center
+              mx-auto max-w-[70ch]
+            "
+            >
+              {wishlist.title}
+            </h1>
 
             {isOwner ? null : (
               <div className="mt-4 text-left flex items-center justify-start space-x-2">
@@ -326,14 +342,42 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
             )}
           </section>
         )}
-        <button
-          className="btn btn-sm btn-outline mb-4"
-          onClick={() =>
-            setViewMode((vm) => (vm === "split" ? "card" : "split"))
-          }
-        >
-          {viewMode === "split" ? "Card View" : "Split View"}
-        </button>
+
+<div className="relative -mx-4 px-4 mb-4">
+  <div
+    className="
+      join overflow-x-auto no-scrollbar
+      flex snap-x snap-mandatory
+      justify-start w-full
+    "
+    role="tablist"
+    aria-label="View mode"
+  >
+    {viewModes.map(({ id, label, icon: Icon }) => (
+      <button
+        key={id}
+        type="button"
+        role="tab"
+        aria-selected={viewMode === id}
+        className={clsx(
+          "join-item flex items-center gap-2 px-3 py-2 border font-medium transition-all duration-200",
+          "text-xs sm:text-sm whitespace-nowrap snap-start",
+          "rounded-none first:rounded-l-md last:rounded-r-md",
+          viewMode === id
+            ? "bg-primary text-primary-content border-primary shadow-sm"
+            : "bg-base-100 hover:bg-base-200"
+        )}
+        onClick={() => setViewMode(id as typeof viewModes[number]["id"])}
+        title={`${label} view`}
+        aria-label={`${label} view`}
+      >
+        <Icon className="w-4 h-4 shrink-0" />
+        <span>{label}</span>
+      </button>
+    ))}
+  </div>
+</div>
+
         {/* List of Wishes */}
         <WishesList
           wishlist={wishlist!}
@@ -356,7 +400,7 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
         <ShowMoreButton
           currentCount={visibleCount}
           total={wishlist?.wishes.length || 0}
-          onShowMore={() => setVisibleCount(visibleCount + 5)}
+          onShowMore={() => setVisibleCount(visibleCount + 20)}
         />
 
         {/* Edit Wis hlist Modal for owner */}

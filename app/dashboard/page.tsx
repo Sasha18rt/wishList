@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useState, useDeferredValue } from "react";
 import useSWR, { mutate } from "swr";
 import { useRouter, usePathname } from "next/navigation";
 import CreateWishlistModal from "@/components/wishlist/CreateWishlistModal";
-import WishlistList from "@/components/wishlist/WishlistList";
+import WishlistList from "@/components/dashboard/WishlistList";
 import ReservationsList from "@/components/dashboard/ReservationsList";
 import RecentlyViewedList from "@/components/dashboard/RecentlyViewedList";
 
@@ -92,6 +92,7 @@ export default function Dashboard() {
     data: wlData,
     error: wlError,
     isLoading: wlLoading,
+     isValidating: wlRefreshing,
   } = useSWR<ApiList>(KEY_WL, fetcher, {
     revalidateOnMount: true,
     revalidateIfStale: true,
@@ -196,7 +197,7 @@ export default function Dashboard() {
               </button>
             </div>
           )}
-
+<h2 className="text-2xl font-semibold">Your Wishlists</h2>
           {wlLoading ? (
             <SkeletonGrid />
           ) : nothingFound ? (
@@ -207,7 +208,7 @@ export default function Dashboard() {
             <>
               <WishlistList
                 wishlists={pageData}
-                isLoading={false}
+                isLoading={wlLoading || wlRefreshing}  
                 setWishlists={(updater) => {
                   mutate(
                     KEY_WL,

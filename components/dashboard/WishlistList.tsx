@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import EditWishlistModal from "./EditWishlistModal";
+import EditWishlistModal from "../wishlist/EditWishlistModal";
 import { Settings } from "lucide-react";
 import type { Wishlist } from "@/app/dashboard/page";
 
@@ -25,7 +25,7 @@ export default function WishlistList({
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="skeleton h-28 w-full rounded-xl" />
+          <div key={i} className="skeleton h-28 w-full rounded-xl border border-dashed " />
         ))}
       </div>
     );
@@ -33,7 +33,6 @@ export default function WishlistList({
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-semibold">Your Wishlists</h2>
 
       {wishlists.length > 0 ? (
         <ul className="space-y-2">

@@ -168,7 +168,7 @@ export default function ReservationsList() {
 
       {resValidating && (
         <div className="text-center text-xs text-base-content/60" aria-live="polite">
-          Updating…
+                  
         </div>
       )}
     </section>
@@ -179,10 +179,14 @@ export default function ReservationsList() {
 
 function ReservationsSkeleton() {
   return (
-    <div className="space-y-2">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="skeleton h-20 w-full rounded-xl" />
-      ))}
+      <div className="text-center  border-base-300 rounded-2xl p-8">
+          <div
+          className="text-center text-xs text-base-content/60"
+          aria-live="polite"
+        >
+                  <span className="loading loading-spinner loading-xl"></span>
+
+        </div>
     </div>
   );
 }

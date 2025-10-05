@@ -6,7 +6,7 @@ import type { Wish, WishlistData } from "@/types/wishlist";
 
 type Props = {
   wishlist: WishlistData;
-  viewMode: "split" | "card";
+  viewMode: "List" | " Grid" | "gallery";
   visibleCount: number;
   isOwner: boolean;
   isLoggedIn: boolean;
@@ -54,7 +54,7 @@ const ReservationSection = memo(function ReservationSection({
     ) : (
       <button
         type="button"
-        className="btn btn-sm btn-primary"
+        className="btn btn-sm btn-primary "
         onClick={(e) => onReserve(wishId, e)}
       >
         Reserve
@@ -160,58 +160,66 @@ export default function WishesList({
 
   // НОВЕ: форматер ціни з окремою валютою
   const fmtPrice = useCallback((p?: string, c?: string) => {
-  if (!p) return "";
-  const n = Number(p);
-  const code = (c && /^[A-Z]{3}$/.test(c) ? c : "EUR") as
-    | "EUR" | "USD" | "GBP" | "CAD" | "UAH" | "PLN" | "CZK" | "TRY";
+    if (!p) return "";
+    const n = Number(p);
+    const code = (c && /^[A-Z]{3}$/.test(c) ? c : "EUR") as
+      | "EUR"
+      | "USD"
+      | "GBP"
+      | "CAD"
+      | "UAH"
+      | "PLN"
+      | "CZK"
+      | "TRY";
 
-  // якщо не число — показуємо як "15-20 (USD)"
-  if (!Number.isFinite(n)) return c ? `${p} (${c})` : p;
+    // якщо не число — показуємо як "15-20 (USD)"
+    if (!Number.isFinite(n)) return c ? `${p} (${c})` : p;
 
-  // 1) спроба з normal symbol
-  let parts = new Intl.NumberFormat("lt-LT", {
-    style: "currency",
-    currency: code,
-    currencyDisplay: "symbol",
-    maximumFractionDigits: 2,
-  }).formatToParts(n);
-  let currPart = parts.find((x) => x.type === "currency")?.value;
-
-  // 2) якщо показав код (USD/GBP/...), пробуємо narrowSymbol
-  if (!currPart || currPart.toUpperCase() === code) {
-    parts = new Intl.NumberFormat("lt-LT", {
+    // 1) спроба з normal symbol
+    let parts = new Intl.NumberFormat("lt-LT", {
       style: "currency",
       currency: code,
-      currencyDisplay: "narrowSymbol",
+      currencyDisplay: "symbol",
       maximumFractionDigits: 2,
     }).formatToParts(n);
-    currPart = parts.find((x) => x.type === "currency")?.value;
-  }
+    let currPart = parts.find((x) => x.type === "currency")?.value;
 
-  // 3) мапінг фолбеків
-  const FALLBACK: Record<string, string> = {
-    USD: "$",
-    EUR: "€",
-    GBP: "£",
-    CAD: "CA$",
-    UAH: "₴",
-    PLN: "zł",
-    CZK: "Kč",
-    TRY: "₺",
-  };
-  const symbol = currPart && currPart.toUpperCase() !== code ? currPart : FALLBACK[code] || code;
+    // 2) якщо показав код (USD/GBP/...), пробуємо narrowSymbol
+    if (!currPart || currPart.toUpperCase() === code) {
+      parts = new Intl.NumberFormat("lt-LT", {
+        style: "currency",
+        currency: code,
+        currencyDisplay: "narrowSymbol",
+        maximumFractionDigits: 2,
+      }).formatToParts(n);
+      currPart = parts.find((x) => x.type === "currency")?.value;
+    }
 
-  // зліпимо рядок із заміною currency-part на обраний символ
-  const withSymbol = parts
-    .map((p) => (p.type === "currency" ? symbol : p.value))
-    .join("");
+    // 3) мапінг фолбеків
+    const FALLBACK: Record<string, string> = {
+      USD: "$",
+      EUR: "€",
+      GBP: "£",
+      CAD: "CA$",
+      UAH: "₴",
+      PLN: "zł",
+      CZK: "Kč",
+      TRY: "₺",
+    };
+    const symbol =
+      currPart && currPart.toUpperCase() !== code
+        ? currPart
+        : FALLBACK[code] || code;
 
-  return withSymbol;
-}, []);
+    // зліпимо рядок із заміною currency-part на обраний символ
+    const withSymbol = parts
+      .map((p) => (p.type === "currency" ? symbol : p.value))
+      .join("");
 
+    return withSymbol;
+  }, []);
 
-  const safeExternalLink = (url?: string) =>
-    !!url && /^https?:\/\//i.test(url);
+  const safeExternalLink = (url?: string) => !!url && /^https?:\/\//i.test(url);
 
   const items = (wishlist.wishes || []).slice(0, Math.max(0, visibleCount));
 
@@ -224,7 +232,17 @@ export default function WishesList({
   }
 
   return (
-    <ul className="space-y-4">
+<ul
+  className={clsx(
+    viewMode === "gallery"
+      ? "grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
+      : viewMode === " Grid"
+      ? "grid grid-cols-2 sm:grid-cols-2 gap-4"
+      : "space-y-4"
+  )}
+>
+
+
       {items.map((wish) => {
         const r = reservationsByWishId.get(wish._id);
         const isReserved = !!r;
@@ -236,9 +254,7 @@ export default function WishesList({
             <h3 className="text-lg font-semibold">{wish.name}</h3>
 
             {wish.description && (
-              <p className="text-sm text-base-content/70">
-                {wish.description}
-              </p>
+              <p className="text-sm text-base-content/70">{wish.description}</p>
             )}
 
             {safeExternalLink(wish.product_url) && (
@@ -249,13 +265,13 @@ export default function WishesList({
                 className="link text-sm"
                 aria-label="Open product link"
               >
-                View product ↗
+                View product
               </a>
             )}
 
             {wish.price && (
               <p className="text-sm">
-                💰 {fmtPrice(wish.price, (wish as any).currency)}
+                  {fmtPrice(wish.price, (wish as any).currency)}
               </p>
             )}
 
@@ -292,7 +308,7 @@ export default function WishesList({
           </>
         );
 
-        if (viewMode === "split") {
+        if (viewMode === "List") {
           return (
             <li
               key={wish._id}
@@ -300,7 +316,14 @@ export default function WishesList({
             >
               <div className="flex flex-col justify-between flex-1">
                 <div className="space-y-1">{CoreInfo}</div>
-                <div className="flex flex-col gap-x-2">{Actions}</div>
+                <div
+                  className={clsx(
+                    "flex flex-col gap-2",
+                    !wish.image_url && "max-w-[calc(100%-7rem)]"
+                  )}
+                >
+                  {Actions}
+                </div>{" "}
               </div>
 
               {wish.image_url && (
@@ -316,28 +339,186 @@ export default function WishesList({
             </li>
           );
         }
+//  Grid view
+else if (viewMode === " Grid") {
+  return (
+    <li
+      key={wish._id}
+      className="group bg-base-100 rounded-xl border shadow-sm hover:shadow-md transition overflow-hidden flex flex-col"
+    >
+      {wish.image_url ? (
+        <img
+          src={wish.image_url}
+          alt={wish.name}
+          className="w-full aspect-[4/3] object-cover will-change-transform transition duration-300 group-hover:scale-[1.02]"
+          loading="lazy"
+          decoding="async"
+        />
+      ) : (
+        <div className="w-full aspect-[4/3] bg-base-200 flex items-center justify-center text-base-content/50">
+          No image
+        </div>
+      )}
+
+      <div className="flex flex-col justify-between p-3 sm:p-4 gap-3 flex-1">
+        <div className="space-y-1.5">
+          <h3 className="text-base sm:text-lg font-semibold line-clamp-2">
+            {wish.name}
+          </h3>
+
+          {wish.description && (
+            <p className="text-xs sm:text-sm text-base-content/70 line-clamp-2">
+              {wish.description}
+            </p>
+          )}
+
+          {safeExternalLink(wish.product_url) && (
+            <a
+              href={wish.product_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="link text-xs sm:text-sm"
+              aria-label="Open product link"
+            >
+              View product
+            </a>
+          )}
+
+          {wish.price && (
+            <p className="text-xs sm:text-sm">
+                {fmtPrice(wish.price, (wish as any).currency)}
+            </p>
+          )}
+
+          <p className="text-[11px] sm:text-xs text-base-content/60">
+            Added: {fmtDate((wish as any).added_at)}
+          </p>
+        </div>
+
+        <div className="mt-1 flex flex-col gap-2 items-start [&_.btn]:w-36 [&_.btn]:min-w-36">
+          {Actions}
+        </div>
+      </div>
+    </li>
+  );
+}
+
 
         // Card view
-        return (
-          <li
-            key={wish._id}
-            className={clsx(
-              "rounded-xl p-4 bg-base-100 shadow-md space-y-2 transition-all",
-              isMine ? "border-2 border-primary" : "border"
-            )}
-          >
-            {CoreInfo}
-            {wish.image_url && (
-              <img
-                src={wish.image_url}
-                alt={wish.name}
-                className="w-full h-auto rounded"
-                loading="lazy"
-              />
-            )}
-            {Actions}
-          </li>
-        );
+    
+else if (viewMode === "gallery") {
+  const hasLink = safeExternalLink(wish.product_url);
+
+  return (
+    <li
+      key={wish._id}
+      className="relative group overflow-hidden rounded-xl border bg-base-100 shadow-sm hover:shadow-md transition"
+    >
+      {/* Картинка (обгортаємо в <a>, якщо є посилання) */}
+      {hasLink ? (
+        <a
+          href={wish.product_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full h-full"
+          aria-label={`Open ${wish.name}`}
+          title={wish.name}
+        >
+          {wish.image_url ? (
+            <img
+              src={wish.image_url}
+              alt={wish.name}
+              className="w-full aspect-square object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
+            <div className="w-full aspect-square bg-base-200 flex items-center justify-center text-base-content/50">
+              No image
+            </div>
+          )}
+        </a>
+      ) : wish.image_url ? (
+        <img
+          src={wish.image_url}
+          alt={wish.name}
+          className="w-full aspect-square object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          loading="lazy"
+          decoding="async"
+        />
+      ) : (
+        <div className="w-full aspect-square bg-base-200 flex items-center justify-center text-base-content/50">
+          No image
+        </div>
+      )}
+
+      {/* Напівпрозорий оверлей: пропускає кліки до <a>, окрім зони кнопок */}
+      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3 text-white pointer-events-none">
+        <h3 className="text-sm sm:text-base font-semibold line-clamp-2 mb-1">
+          {wish.name}
+        </h3>
+
+        {wish.price && (
+          <p className="text-xs sm:text-sm text-white/90 mb-2">
+            {fmtPrice(wish.price, (wish as any).currency)}
+          </p>
+        )}
+
+        {/* Кнопки всередині оверлею мають власні події */}
+        <div className="flex flex-wrap gap-1 pointer-events-auto">
+          {!isOwner && !reservationsByWishId.get(wish._id) && (
+            <button
+              type="button"
+              className="btn btn-xs w-full btn-primary"
+              onClick={(e) => {
+                // не потрібно stopPropagation — <a> під нами не предок цього контейнера
+                onReserve(wish._id, e);
+              }}
+            >
+              Reserve
+            </button>
+          )}
+
+          {!isOwner && isMine && (
+            <button
+              type="button"
+              className="btn btn-xs w-full btn-accent"
+              onClick={() => onCancel(wish._id)}
+            >
+              Cancel
+            </button>
+          )}
+
+          {isOwner && (
+            <button
+              type="button"
+              className="btn btn-xs w-full btn-secondary"
+              onClick={() => onEdit(wish)}
+            >
+              Edit
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Бейдж "Reserved" / "You reserved" */}
+      {reservationsByWishId.get(wish._id) && (
+        <span
+          className={clsx(
+            "absolute top-2 right-2 z-10 px-2 py-1 rounded-md text-[11px] font-medium shadow-md",
+            isMine ? "bg-primary text-primary-content" : "bg-success text-success-content"
+          )}
+        >
+          {isMine ? "You reserved" : "Reserved"}
+        </span>
+      )}
+    </li>
+  );
+}
+
+
+
+
       })}
     </ul>
   );
