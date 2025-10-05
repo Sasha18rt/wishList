@@ -125,14 +125,13 @@ export default function CreateWishlistModal({
                     value={theme}
                     onChange={(e) => setTheme(e.target.value)}
                   >
-                    <option value="default">Default</option>
-                    <option value="dark">Dark</option>
-                    <option value="light">Light</option>
-                    <option value="lofi">Lofi</option>
-                    <option value="bumblebee">bumblebee</option>
+                     <option value="default">Default</option>
+                    <option value="halloween">Halloween</option>
+                    <option value="pastel">Pastel</option>
+                    <option value="retro">Retro</option>
+                    <option value="bumblebee">Bumblebee</option>
                     <option value="coffee">Coffee</option>
                     <option value="autumn">Autumn</option>
-                    <option value="valentine">Valentine</option>
                   </select>
 
                   <select

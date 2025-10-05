@@ -344,39 +344,46 @@ const viewModes = [
         )}
 
 <div className="relative -mx-4 px-4 mb-4">
-  <div
-    className="
-      join overflow-x-auto no-scrollbar
-      flex snap-x snap-mandatory
-      justify-start w-full
-    "
-    role="tablist"
-    aria-label="View mode"
-  >
-    {viewModes.map(({ id, label, icon: Icon }) => (
-      <button
-        key={id}
-        type="button"
-        role="tab"
-        aria-selected={viewMode === id}
-        className={clsx(
-          "join-item flex items-center gap-2 px-3 py-2 border font-medium transition-all duration-200",
-          "text-xs sm:text-sm whitespace-nowrap snap-start",
-          "rounded-none first:rounded-l-md last:rounded-r-md",
-          viewMode === id
-            ? "bg-primary text-primary-content border-primary shadow-sm"
-            : "bg-base-100 hover:bg-base-200"
-        )}
-        onClick={() => setViewMode(id as typeof viewModes[number]["id"])}
-        title={`${label} view`}
-        aria-label={`${label} view`}
-      >
-        <Icon className="w-4 h-4 shrink-0" />
-        <span>{label}</span>
-      </button>
-    ))}
+  <div className="overflow-x-auto no-scrollbar">
+    <div
+      role="tablist"
+      aria-label="View mode"
+      className="
+        inline-flex w-auto
+        rounded-md border overflow-hidden
+        snap-x snap-mandatory
+        divide-x
+      "
+    >
+      {viewModes.map(({ id, label, icon: Icon }) => (
+        <button
+          key={id}
+          type="button"
+          role="tab"
+          aria-selected={viewMode === id}
+          onClick={() => setViewMode(id as typeof viewModes[number]['id'])}
+          title={`${label} view`}
+          aria-label={`${label} view`}
+          className={clsx(
+            // базові стилі
+            "px-3 py-2 flex items-center gap-2 font-medium transition-all duration-200",
+            "text-xs sm:text-sm whitespace-nowrap snap-start",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+
+            // стан
+            viewMode === id
+              ? "bg-primary text-primary-content"
+              : "bg-base-100 hover:bg-base-200"
+          )}
+        >
+          <Icon className="w-4 h-4 shrink-0" />
+          <span>{label}</span>
+        </button>
+      ))}
+    </div>
   </div>
 </div>
+
 
         {/* List of Wishes */}
         <WishesList
@@ -400,7 +407,7 @@ const viewModes = [
         <ShowMoreButton
           currentCount={visibleCount}
           total={wishlist?.wishes.length || 0}
-          onShowMore={() => setVisibleCount(visibleCount + 20)}
+          onShowMore={() => setVisibleCount(visibleCount + 30)}
         />
 
         {/* Edit Wis hlist Modal for owner */}

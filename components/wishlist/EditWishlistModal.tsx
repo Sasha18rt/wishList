@@ -76,7 +76,14 @@ export default function EditWishlistModal({
 
       toast.success("Wishlist deleted successfully!");
       setIsOpen(false);
-      onUpdate({ _id: wishlistId, title: "", theme: "", visibility: "", created_at: "", deleted: true });
+      onUpdate({
+        _id: wishlistId,
+        title: "",
+        theme: "",
+        visibility: "",
+        created_at: "",
+        deleted: true,
+      });
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -86,7 +93,11 @@ export default function EditWishlistModal({
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={() => setIsOpen(false)}>
+      <Dialog
+        as="div"
+        className="relative z-50"
+        onClose={() => setIsOpen(false)}
+      >
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -120,7 +131,12 @@ export default function EditWishlistModal({
                     className="btn btn-square btn-ghost btn-sm"
                     onClick={() => setIsOpen(false)}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      className="w-6 h-6"
+                    >
                       <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
                     </svg>
                   </button>
@@ -142,13 +158,12 @@ export default function EditWishlistModal({
                     className="select select-bordered w-full"
                   >
                     <option value="default">Default</option>
-                    <option value="dark">Dark</option>
-                    <option value="light">Light</option>
-                    <option value="lofi">Lofi</option>
-                    <option value="bumblebee">bumblebee</option>
+                    <option value="halloween">Halloween</option>
+                    <option value="pastel">Pastel</option>
+                    <option value="retro">Retro</option>
+                    <option value="bumblebee">Bumblebee</option>
                     <option value="coffee">Coffee</option>
                     <option value="autumn">Autumn</option>
-                    <option value="valentine">Valentine</option>
                   </select>
 
                   <select
@@ -158,16 +173,22 @@ export default function EditWishlistModal({
                   >
                     <option value="public">Public</option>
                     <option value="private">Private</option>
-
                   </select>
 
                   {/* Buttons */}
                   <div className="flex gap-1">
-                    <button onClick={handleDelete} className="btn btn-error w-1/2" disabled={loading}>
-                                            {loading ? "Saving..." : "Delete"}
-
+                    <button
+                      onClick={handleDelete}
+                      className="btn btn-error w-1/2"
+                      disabled={loading}
+                    >
+                      {loading ? "Saving..." : "Delete"}
                     </button>
-                    <button onClick={handleUpdate} className="btn btn-success w-1/2" disabled={loading}>
+                    <button
+                      onClick={handleUpdate}
+                      className="btn btn-success w-1/2"
+                      disabled={loading}
+                    >
                       {loading ? "Saving..." : "Update"}
                     </button>
                   </div>
