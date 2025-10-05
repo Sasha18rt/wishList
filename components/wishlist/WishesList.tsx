@@ -229,30 +229,6 @@ useEffect(() => {
     setGalleryReady(false);
   };
 }, [viewMode]);
-  // десь поруч з іншими useState:
-  const [previewId, setPreviewId] = useState<string | null>(null);
-
-  // прибираємо превʼю при зміні режиму/переліку
-  useEffect(() => setPreviewId(null), [viewMode, items.length]);
-
-  // кліки поза карткою закривають превʼю
-  useEffect(() => {
-    if (!previewId) return;
-
-    const onDocClick = (ev: MouseEvent) => {
-      const active = document.querySelector(
-        '[data-preview="true"]'
-      ) as HTMLElement | null;
-      if (active && ev.target instanceof Node && active.contains(ev.target)) {
-        // клік усередині активної картки — нічого не робимо
-        return;
-      }
-      setPreviewId(null);
-    };
-
-    document.addEventListener("click", onDocClick);
-    return () => document.removeEventListener("click", onDocClick);
-  }, [previewId]);
 
   // перевірка “чи це торкання” (для десктопів хай відкриває одразу)
   const isTouchEvent = () =>
@@ -428,13 +404,11 @@ useEffect(() => {
 
         // gallery
         const hasLink = safeExternalLink(wish.product_url);
-        const isPreview = previewId === wish._id;
 
         return (
           <li
             key={wish._id}
             data-ready={galleryReady ? "true" : "false"}
-            data-preview={isPreview ? "true" : "false"}
             className="relative group overflow-hidden data-[ready=false]:[&_li]:pointer-events-none rounded-xl border bg-base-100 shadow-sm hover:shadow-md transition"
           >
             {hasLink ? (
@@ -445,18 +419,7 @@ useEffect(() => {
                 className="block w-full h-full"
                 aria-label={`Open ${wish.name}`}
                 title={wish.name}
-                onClick={(e) => {
-                  // мобільний: перший тап показує превʼю, другий — відкриває лінк
-                  if (
-                    typeof window !== "undefined" &&
-                    matchMedia("(hover: none)").matches &&
-                    !isPreview
-                  ) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setPreviewId(wish._id);
-                  }
-                }}
+               
               >
                 {wish.image_url ? (
                   <img
@@ -525,7 +488,6 @@ useEffect(() => {
                     onClick={(e) => {
                       e.stopPropagation();
                       onReserve(wish._id, e);
-                      setPreviewId(null);
                     }}
                   >
                     Reserve
@@ -538,7 +500,6 @@ useEffect(() => {
                     onClick={(e) => {
                       e.stopPropagation();
                       onCancel(wish._id);
-                      setPreviewId(null);
                     }}
                   >
                     Cancel
