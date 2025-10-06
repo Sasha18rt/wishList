@@ -120,7 +120,7 @@ export const getSEOTags = ({
       siteName: "Wishlify",
       images: ogImages, // <-- ось тут твоя /share.png
       locale,
-      type: openGraph?.type ?? "website",
+      type: "website"
     },
 
     twitter: {
