@@ -212,23 +212,24 @@ export default function WishesList({
   const items = (wishlist.wishes || []).slice(0, Math.max(0, visibleCount));
 
   // анти-флеш hover у gallery
-const [galleryReady, setGalleryReady] = useState(false);
+  const [galleryReady, setGalleryReady] = useState(false);
 
-useEffect(() => {
-  if (viewMode !== "gallery") {
-    setGalleryReady(false);
-    return;
-  }
-  let raf1 = 0, raf2 = 0;
-  raf1 = requestAnimationFrame(() => {
-    raf2 = requestAnimationFrame(() => setGalleryReady(true));
-  });
-  return () => {
-    cancelAnimationFrame(raf1);
-    cancelAnimationFrame(raf2);
-    setGalleryReady(false);
-  };
-}, [viewMode]);
+  useEffect(() => {
+    if (viewMode !== "gallery") {
+      setGalleryReady(false);
+      return;
+    }
+    let raf1 = 0,
+      raf2 = 0;
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setGalleryReady(true));
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      setGalleryReady(false);
+    };
+  }, [viewMode]);
 
   // перевірка “чи це торкання” (для десктопів хай відкриває одразу)
   const isTouchEvent = () =>
@@ -316,7 +317,18 @@ useEffect(() => {
           return (
             <li
               key={wish._id}
-              className="flex items-stretch gap-4 border rounded-lg bg-base-100 shadow-md p-4 hover:shadow-lg transition"
+              data-reserved={isReserved ? "true" : "false"}
+              data-mine={isMine ? "true" : "false"}
+              className={clsx(
+                "flex items-stretch gap-4 rounded-lg bg-base-100 p-4 transition border shadow-md hover:shadow-lg",
+                // базовий бордер
+                "border-base-300",
+                // glow, коли зарезервовано
+                "data-[reserved=true]:border-secondary data-[reserved=true]:shadow-[0_0_18px_2px_hsl(var(--s)/.35)]",
+                // інший колір glow, якщо зарезервував саме ти
+                "data-[mine=true]:border-primary data-[mine=true]:shadow-[0_0_18px_2px_hsl(var(--p)/.35)]"
+                // "data-[reserved=true]:animate-pulse"
+              )}
             >
               <div className="flex flex-col justify-between flex-1">
                 <div className="space-y-1">{CoreInfo}</div>
@@ -347,7 +359,14 @@ useEffect(() => {
           return (
             <li
               key={wish._id}
-              className="group bg-base-100 rounded-xl border shadow-sm hover:shadow-md transition overflow-hidden flex flex-col"
+              data-reserved={isReserved ? "true" : "false"}
+              data-mine={isMine ? "true" : "false"}
+              className={clsx(
+                "group bg-base-100 rounded-xl border shadow-sm hover:shadow-md transition overflow-hidden flex flex-col",
+                "border-base-300",
+                "data-[reserved=true]:border-secondary data-[reserved=true]:shadow-[0_0_18px_2px_hsl(var(--s)/.35)]",
+                "data-[mine=true]:border-primary data-[mine=true]:shadow-[0_0_18px_2px_hsl(var(--p)/.35)]"
+              )}
             >
               {wish.image_url ? (
                 <img
@@ -409,128 +428,137 @@ useEffect(() => {
           <li
             key={wish._id}
             data-ready={galleryReady ? "true" : "false"}
-            className="relative group overflow-hidden data-[ready=false]:[&_li]:pointer-events-none rounded-xl border bg-base-100 shadow-sm hover:shadow-md transition"
+            data-reserved={isReserved ? "true" : "false"}
+            data-mine={isMine ? "true" : "false"}
+            className={clsx(
+              "relative group overflow-visible rounded-xl border bg-base-100 shadow-sm hover:shadow-md transition data-[ready=false]:pointer-events-none",
+                 "data-[reserved=true]:border-secondary data-[reserved=true]:shadow-[0_0_18px_2px_hsl(var(--s)/.35)]",
+                "data-[mine=true]:border-primary data-[mine=true]:shadow-[0_0_18px_2px_hsl(var(--p)/.35)]"
+            )}
           >
-            {hasLink ? (
-              <a
-                href={wish.product_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full h-full"
-                aria-label={`Open ${wish.name}`}
-                title={wish.name}
-               
-              >
-                {wish.image_url ? (
-                  <img
-                    src={wish.image_url}
-                    alt={wish.name}
-                   className="
-    w-full aspect-square object-cover
-    transition-transform duration-300
-    group-data-[ready=true]:group-hover:scale-[1.03]
-    group-data-[preview=true]:scale-[1.03]
-  "
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : (
-                  <div className="w-full aspect-square bg-base-200 flex items-center justify-center text-base-content/50">
-                    No image
-                  </div>
-                )}
-              </a>
-            ) : wish.image_url ? (
-              <img
-                src={wish.image_url}
-                alt={wish.name}
-                className="
-          w-full aspect-square object-cover
+            {/* медіа-обгортач, щоб скейл і оверлей кліпались за радіусом */}
+            <div className="relative rounded-xl overflow-hidden">
+              {hasLink ? (
+                <a
+                  href={wish.product_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full h-full"
+                  aria-label={`Open ${wish.name}`}
+                  title={wish.name}
+                >
+                  {wish.image_url ? (
+                    <img
+                      src={wish.image_url}
+                      alt={wish.name}
+                      className="
+              w-full aspect-square object-cover will-change-transform
+              transition-transform duration-300
+              group-data-[ready=true]:group-hover:scale-[1.03]
+              group-data-[preview=true]:scale-[1.03]
+            "
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <div className="w-full aspect-square bg-base-200 flex items-center justify-center text-base-content/50">
+                      No image
+                    </div>
+                  )}
+                </a>
+              ) : wish.image_url ? (
+                <img
+                  src={wish.image_url}
+                  alt={wish.name}
+                  className="
+          w-full aspect-square object-cover will-change-transform
           transition-transform duration-300
           group-data-[ready=true]:group-hover:scale-[1.03]
           group-data-[preview=true]:scale-[1.03]
         "
-                loading="lazy"
-                decoding="async"
-              />
-            ) : (
-              <div className="w-full aspect-square bg-base-200 flex items-center justify-center text-base-content/50">
-                No image
-              </div>
-            )}
-
-            {/* overlay: показ на hover (desktop) або коли data-preview=true (mobile) */}
-          <div
-  className="
-    absolute inset-0 bg-black/60
-    invisible opacity-0
-    transition-opacity duration-300
-    flex flex-col justify-end p-3 text-white pointer-events-none
-    group-data-[ready=true]:group-hover:visible group-data-[ready=true]:group-hover:opacity-100
-    group-data-[preview=true]:visible group-data-[preview=true]:opacity-100
-  "
->
-
-              <h3 className="text-sm sm:text-base font-semibold line-clamp-2 mb-1">
-                {wish.name}
-              </h3>
-              {wish.price && (
-                <p className="text-xs sm:text-sm text-white/90 mb-2">
-                  {fmtPrice(wish.price, (wish as any).currency)}
-                </p>
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
+                <div className="w-full aspect-square bg-base-200 flex items-center justify-center text-base-content/50">
+                  No image
+                </div>
               )}
 
-              <div className="flex flex-wrap gap-1 pointer-events-auto">
-                {!isOwner && !reservationsByWishId.get(wish._id) && (
-                  <button
-                    type="button"
-                    className="btn btn-xs w-full btn-primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onReserve(wish._id, e);
-                    }}
-                  >
-                    Reserve
-                  </button>
+              {/* overlay: hover (desktop) або data-preview=true (mobile) */}
+              <div
+                className="
+        absolute inset-0
+        bg-gradient-to-t from-black/70 via-black/35 to-transparent
+        invisible opacity-0 translate-y-1
+        transition-opacity duration-300
+        flex flex-col justify-end p-3 text-white pointer-events-none
+        group-data-[ready=true]:group-hover:visible group-data-[ready=true]:group-hover:opacity-100 group-data-[ready=true]:group-hover:translate-y-0
+        group-data-[preview=true]:visible group-data-[preview=true]:opacity-100 group-data-[preview=true]:translate-y-0
+      "
+              >
+                <h3 className="text-sm sm:text-base font-semibold line-clamp-2 mb-1">
+                  {wish.name}
+                </h3>
+                {wish.price && (
+                  <p className="text-xs sm:text-sm text-white/90 mb-2">
+                    {fmtPrice(wish.price, (wish as any).currency)}
+                  </p>
                 )}
-                {!isOwner && isMine && (
-                  <button
-                    type="button"
-                    className="btn btn-xs w-full btn-accent"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onCancel(wish._id);
-                    }}
-                  >
-                    Cancel
-                  </button>
-                )}
-                {isOwner && (
-                  <button
-                    type="button"
-                    className="btn btn-xs w-full btn-secondary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEdit(wish);
-                    }}
-                  >
-                    Edit
-                  </button>
-                )}
+
+                <div className="flex flex-wrap gap-1 pointer-events-auto">
+                  {!isOwner && !reservationsByWishId.get(wish._id) && (
+                    <button
+                      type="button"
+                      className="btn btn-xs w-full btn-primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onReserve(wish._id, e);
+                      }}
+                    >
+                      Reserve
+                    </button>
+                  )}
+                  {!isOwner && isMine && (
+                    <button
+                      type="button"
+                      className="btn btn-xs w-full btn-accent"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCancel(wish._id);
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  )}
+                  {isOwner && (
+                    <button
+                      type="button"
+                      className="btn btn-xs w-full btn-secondary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(wish);
+                      }}
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
             {reservationsByWishId.get(wish._id) && (
-              <span
-                className={clsx(
-                  "absolute top-2 right-2 z-10 px-2 py-1 rounded-md text-[11px] font-medium shadow-md",
-                  isMine
-                    ? "bg-primary text-primary-content"
-                    : "bg-success text-success-content"
-                )}
-              >
-                {isMine ? "You reserved" : "Reserved"}
-              </span>
+              <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+                <span
+                  className={clsx(
+                    "inline-flex text-secondary  items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold leading-none",
+                    "whitespace-nowrap w-max shadow-sm ring-1 ring-base-300 bg-base-100"
+                  )}
+                  aria-label={isMine ? "You reserved" : "Reserved"}
+                >
+                  {isMine ? "You reserved" : "Reserved"}
+                </span>
+              </div>
             )}
           </li>
         );

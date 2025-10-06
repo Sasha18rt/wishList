@@ -29,4 +29,14 @@ progress::-webkit-progress-value {
   }
 
 
-  
+/* Chrome/Safari/Edge/etc. */
+::selection {
+  background: hsl(var(--p));   /* secondary */
+  color: hsl(var(--pc));       /* secondary-content */
+}
+
+/* Firefox */
+::-moz-selection {
+  background: hsl(var(--s));
+  color: hsl(var(--sc));
+}
