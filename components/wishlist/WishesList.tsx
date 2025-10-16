@@ -322,9 +322,9 @@ export default function WishesList({
               className={clsx(
                 "flex items-stretch gap-4 rounded-lg bg-base-100 p-4 transition border shadow-md hover:shadow-lg",
                 // базовий бордер
-                "border-base-300",
+                "border-secondary",
                 // glow, коли зарезервовано
-                "data-[reserved=true]:border-secondary data-[reserved=true]:shadow-[0_0_18px_2px_hsl(var(--s)/.35)]",
+                "data-[reserved=true]:border-base-300 ",
                 // інший колір glow, якщо зарезервував саме ти
                 "data-[mine=true]:border-primary data-[mine=true]:shadow-[0_0_18px_2px_hsl(var(--p)/.35)]"
                 // "data-[reserved=true]:animate-pulse"
@@ -363,8 +363,10 @@ export default function WishesList({
               data-mine={isMine ? "true" : "false"}
               className={clsx(
                 "group bg-base-100 rounded-xl border shadow-sm hover:shadow-md transition overflow-hidden flex flex-col",
-                "border-base-300",
-                "data-[reserved=true]:border-secondary data-[reserved=true]:shadow-[0_0_18px_2px_hsl(var(--s)/.35)]",
+                  "border-secondary",
+                // glow, коли зарезервовано
+                "data-[reserved=true]:border-base-300 ",
+               // "data-[reserved=true]:border-secondary data-[reserved=true]:shadow-[0_0_18px_2px_hsl(var(--s)/.35)]",
                 "data-[mine=true]:border-primary data-[mine=true]:shadow-[0_0_18px_2px_hsl(var(--p)/.35)]"
               )}
             >
@@ -432,8 +434,11 @@ export default function WishesList({
             data-mine={isMine ? "true" : "false"}
             className={clsx(
               "relative group overflow-visible rounded-xl border bg-base-100 shadow-sm hover:shadow-md transition data-[ready=false]:pointer-events-none",
-                 "data-[reserved=true]:border-secondary data-[reserved=true]:shadow-[0_0_18px_2px_hsl(var(--s)/.35)]",
-                "data-[mine=true]:border-primary data-[mine=true]:shadow-[0_0_18px_2px_hsl(var(--p)/.35)]"
+                "border-secondary",
+                // glow, коли зарезервовано
+                "data-[reserved=true]:border-base-300 ",  
+              //  "data-[reserved=true]:border-secondary data-[reserved=true]:shadow-[0_0_18px_2px_hsl(var(--s)/.35)]",
+                //"data-[mine=true]:border-primary data-[mine=true]:shadow-[0_0_18px_2px_hsl(var(--p)/.35)]"
             )}
           >
             {/* медіа-обгортач, щоб скейл і оверлей кліпались за радіусом */}
@@ -551,7 +556,7 @@ export default function WishesList({
               <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
                 <span
                   className={clsx(
-                    "inline-flex text-secondary  items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold leading-none",
+                    "inline-flex text-primary  items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold leading-none",
                     "whitespace-nowrap w-max shadow-sm ring-1 ring-base-300 bg-base-100"
                   )}
                   aria-label={isMine ? "You reserved" : "Reserved"}
