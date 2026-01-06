@@ -48,7 +48,7 @@ interface Wish {
   image_public_id?: string;
   product_url?: string;
 
-  price?: string;    // "199.99" або ""
+  price?: string; // "199.99" або ""
   currency?: string; // "EUR" | "USD" | ...
 
   added_at?: string;
@@ -143,28 +143,38 @@ export default function EditWishModal({
     return Number.isFinite(num) ? num : NaN;
   }, [priceRaw]);
 
-  const formattedPreview = useMemo(() => {
-    if (!Number.isFinite(priceValue)) return "";
-    try {
-      return new Intl.NumberFormat(undefined, {
-        style: "currency",
-        currency: currency.toUpperCase(),
-      }).format(priceValue);
-    } catch {
-      return `${priceValue} ${currency.toUpperCase()}`;
-    }
-  }, [priceValue, currency]);
-
   const close = () => {
     if (!saving && !deleting) setIsOpen(false);
   };
 
-  const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      if (!saving && !deleting) void handleUpdateWish();
-    }
-  };
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handler = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + Enter
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        if (!saving && !deleting) void handleUpdateWish();
+      }
+    };
+
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [
+    isOpen,
+    saving,
+    deleting,
+    wishlistId,
+    wish?._id,
+    name,
+    description,
+    productUrl,
+    priceRaw,
+    currency,
+    imageFile,
+    imageUrl,
+    imagePublicId,
+  ]);
 
   // вибір файлу
   const pickFile = (file?: File | null) => {
@@ -228,11 +238,14 @@ export default function EditWishModal({
       };
       if (hasPrice) body.currency = currencyUpper;
 
-      const res = await fetch(`/api/wishlists/${wishlistId}/wishes/${wish._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      const res = await fetch(
+        `/api/wishlists/${wishlistId}/wishes/${wish._id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }
+      );
       if (!res.ok) throw new Error("Failed to update wish");
 
       const updatedWish = await res.json();
@@ -252,9 +265,12 @@ export default function EditWishModal({
 
     setDeleting(true);
     try {
-      const res = await fetch(`/api/wishlists/${wishlistId}/wishes/${wish._id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `/api/wishlists/${wishlistId}/wishes/${wish._id}`,
+        {
+          method: "DELETE",
+        }
+      );
       if (!res.ok) throw new Error("Failed to delete wish");
 
       toast.success("Wish deleted successfully!");
@@ -289,7 +305,7 @@ export default function EditWishModal({
           <div className="fixed inset-0 bg-base-content/30 backdrop-blur-[2px]" />
         </Transition.Child>
 
-        <div className="fixed inset-0 overflow-y-auto" onKeyDown={onKeyDown}>
+        <div className="fixed inset-0 overflow-y-auto" >
           <div className="flex min-h-full items-center justify-center p-4">
             <Transition.Child
               as={Fragment}
@@ -415,17 +431,14 @@ export default function EditWishModal({
                         className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-primary/40"
                         placeholder="Price (e.g. 199.99)"
                       />
-                      <div className="mt-1 text-xs text-base-content/60 h-4">
-                        {Number.isFinite(priceValue) && formattedPreview
-                          ? `≈ ${formattedPreview}`
-                          : ""}
-                      </div>
                     </div>
 
                     <select
                       className="select select-bordered w-full focus:outline-none focus:ring-2 focus:ring-primary/40"
                       value={currency}
-                      onChange={(e) => setCurrency(e.target.value.toUpperCase())}
+                      onChange={(e) =>
+                        setCurrency(e.target.value.toUpperCase())
+                      }
                       disabled={!Number.isFinite(priceValue)}
                       title={
                         !Number.isFinite(priceValue)

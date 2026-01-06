@@ -63,6 +63,13 @@ const ClientLayout = ({ children }: { children: ReactNode }) => {
 
         {/* Show Success/Error messages anywhere from the app with toast() */}
         <Toaster
+          position="bottom-right"
+          gutter={8}
+          containerStyle={{
+            right: 16,
+            bottom: 16,
+            zIndex: 60, // якщо треба поверх всього
+          }}
           toastOptions={{
             duration: 3000,
           }}

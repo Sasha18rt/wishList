@@ -43,6 +43,22 @@ export default function AddWishModal({
   const [priceRaw, setPriceRaw] = useState(""); // користувацьке введення
   const [currency, setCurrency] = useState<string>("EUR");
   const [loading, setLoading] = useState(false);
+  const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
+    // щоб не спрацьовувало в textarea на звичайний Enter
+    const isTextarea = (e.target as HTMLElement)?.tagName === "TEXTAREA";
+
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      e.preventDefault();
+      if (!loading) void handleAddWish();
+      return;
+    }
+
+    // опціонально: звичайний Enter (тільки якщо не textarea)
+    if (!isTextarea && e.key === "Enter") {
+      e.preventDefault();
+      if (!loading) void handleAddWish();
+    }
+  };
 
   // Підставляємо останню обрану валюту
   useEffect(() => {
@@ -68,17 +84,6 @@ export default function AddWishModal({
     return Number.isFinite(num) ? num : NaN;
   }, [priceRaw]);
 
-  const formattedPreview = useMemo(() => {
-    if (!Number.isFinite(priceValue)) return "";
-    try {
-      return new Intl.NumberFormat(undefined, {
-        style: "currency",
-        currency,
-      }).format(priceValue);
-    } catch {
-      return `${priceValue} ${currency}`;
-    }
-  }, [priceValue, currency]);
 
   const resetForm = () => {
     setName("");
@@ -168,7 +173,7 @@ export default function AddWishModal({
           <div className="fixed inset-0 bg-base-content/30 backdrop-blur-[2px]" />
         </Transition.Child>
 
-        <div className="fixed inset-0 overflow-y-auto">
+        <div className="fixed inset-0 overflow-y-auto" onKeyDown={onKeyDown}>
           <div className="flex min-h-full items-center justify-center p-4">
             <Transition.Child
               as={Fragment}
@@ -285,17 +290,15 @@ export default function AddWishModal({
                         className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-primary/40"
                         placeholder="Price (e.g. 199.99)"
                       />
-                      <div className="mt-1 text-xs text-base-content/60 h-4">
-                        {Number.isFinite(priceValue) && formattedPreview
-                          ? `≈ ${formattedPreview}`
-                          : ""}
-                      </div>
+
                     </div>
 
                     <select
                       className="select select-bordered w-full focus:outline-none focus:ring-2 focus:ring-primary/40"
                       value={currency}
-                      onChange={(e) => setCurrency(e.target.value.toUpperCase())}
+                      onChange={(e) =>
+                        setCurrency(e.target.value.toUpperCase())
+                      }
                       disabled={!Number.isFinite(priceValue)}
                       title={
                         !Number.isFinite(priceValue)
