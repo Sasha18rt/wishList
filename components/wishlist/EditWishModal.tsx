@@ -1,31 +1,21 @@
 "use client";
 
-import { useState, useEffect, Fragment, useRef, useMemo } from "react";
+import React, { useState, useEffect, Fragment, useRef, useMemo } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import toast from "react-hot-toast";
 import { wishSchema } from "@/app/validation/schemas";
-import React from "react";
-// --------- Константи/утиліти ---------
-const ALLOWED_EXT = ["jpg", "jpeg", "png", "gif"];
-const ALLOWED_TYPE = ["image/jpeg", "image/png", "image/gif"];
-const MAX_MB = 10;
+import { CURRENCIES, SUPPORTED_CURRENCY_CODES } from "@/libs/currencies";
 
-const CURRENCIES = [
-  { code: "USD", label: "USD — US Dollar" },
-  { code: "EUR", label: "EUR — Euro" },
-  { code: "GBP", label: "GBP — British Pound" },
-  { code: "CAD", label: "CAD — Canadian Dollar" },
-  { code: "UAH", label: "UAH — Ukrainian Hryvnia" },
-  { code: "PLN", label: "PLN — Polish Złoty" },
-  { code: "CZK", label: "CZK — Czech Koruna" },
-  { code: "TRY", label: "TRY — Turkish Lira" },
-];
+// --------- Константи/утиліти ---------
+const ALLOWED_EXT = ["jpg", "jpeg", "png", "gif"] as const;
+const ALLOWED_TYPE = ["image/jpeg", "image/png", "image/gif"] as const;
+const MAX_MB = 10;
 
 function validateImage(file: File) {
   const ext = file.name.split(".").pop()?.toLowerCase() || "";
-  if (!ALLOWED_EXT.includes(ext))
+  if (!ALLOWED_EXT.includes(ext as any))
     throw new Error("Upload failed: only JPG, PNG, GIF.");
-  if (!ALLOWED_TYPE.includes(file.type))
+  if (!ALLOWED_TYPE.includes(file.type as any))
     throw new Error("Upload failed: invalid file type.");
   const mb = file.size / 1024 / 1024;
   if (mb > MAX_MB)
@@ -58,11 +48,9 @@ interface Wish {
   image_public_id?: string;
   product_url?: string;
 
-  // НОВЕ: зберігаємо окремо
-  price?: string;        // "199.99" або ""
-  currency?: string;     // "EUR" | "USD" | ...
+  price?: string;    // "199.99" або ""
+  currency?: string; // "EUR" | "USD" | ...
 
-  // Legacy підтримка: якщо у БД досі є "199.99 USD" у price — ми розпарсимо це нижче
   added_at?: string;
 }
 
@@ -105,38 +93,47 @@ export default function EditWishModal({
   useEffect(() => {
     if (!wish) return;
 
-    setName(wish.name);
+    setName(wish.name ?? "");
     setDescription(wish.description || "");
     setImageUrl(wish.image_url || "");
     setImagePublicId(wish.image_public_id || "");
     setProductUrl(wish.product_url || "");
 
-    // 1) Нормальний сучасний випадок: price як "199.99", currency окремо
-    if (wish.price && !/\s[A-Z]{3}$/.test(wish.price)) {
+    // 1) Сучасний випадок: price окремо, currency окремо
+    const hasLegacySuffix = !!wish.price && /\s[A-Z]{3}$/.test(wish.price);
+    if (wish.price && !hasLegacySuffix) {
       setPriceRaw(wish.price);
-      if (wish.currency && CURRENCIES.some((x) => x.code === wish.currency)) {
-        setCurrency(wish.currency);
-      }
-    } else {
-      // 2) Legacy: у price лежить "199.99 USD" — розпарсимо
-      const priceStr = wish.price || "";
-      const [v, c] = priceStr.split(" ").filter(Boolean);
-      if (v && !Number.isNaN(Number(v))) setPriceRaw(v);
-      if (c && CURRENCIES.some((x) => x.code === c)) setCurrency(c);
+      const c = (wish.currency ?? "").toUpperCase();
+      if (SUPPORTED_CURRENCY_CODES.has(c)) setCurrency(c);
+      else setCurrency("EUR");
+      return;
     }
+
+    // 2) Legacy: "199.99 USD"
+    const priceStr = wish.price || "";
+    const [v, c] = priceStr.split(" ").filter(Boolean);
+    if (v && !Number.isNaN(Number(v))) setPriceRaw(v);
+    const cc = (c ?? "").toUpperCase();
+    if (SUPPORTED_CURRENCY_CODES.has(cc)) setCurrency(cc);
+    else setCurrency("EUR");
   }, [wish]);
 
-  // підставляємо останню обрану валюту при відкритті (якщо її нема у айтемі)
+  // підставляємо останню обрану валюту при відкритті (якщо wish.currency не задана)
   useEffect(() => {
     if (!isOpen) return;
+
+    // якщо у вішки вже є currency — не чіпаємо
+    const wishCur = (wish?.currency ?? "").toUpperCase();
+    if (wishCur && SUPPORTED_CURRENCY_CODES.has(wishCur)) return;
+
     const saved = localStorage.getItem("wishlify:lastCurrency");
-    if (saved && CURRENCIES.some((x) => x.code === saved)) {
-      setCurrency((prev) => (wish?.currency ? prev : saved));
-    }
+    const normalized = (saved ?? "").toUpperCase();
+
+    if (SUPPORTED_CURRENCY_CODES.has(normalized)) setCurrency(normalized);
   }, [isOpen, wish?.currency]);
 
   useEffect(() => {
-    localStorage.setItem("wishlify:lastCurrency", currency);
+    localStorage.setItem("wishlify:lastCurrency", currency.toUpperCase());
   }, [currency]);
 
   // нормалізація ціни
@@ -151,10 +148,10 @@ export default function EditWishModal({
     try {
       return new Intl.NumberFormat(undefined, {
         style: "currency",
-        currency,
+        currency: currency.toUpperCase(),
       }).format(priceValue);
     } catch {
-      return `${priceValue} ${currency}`;
+      return `${priceValue} ${currency.toUpperCase()}`;
     }
   }, [priceValue, currency]);
 
@@ -198,20 +195,20 @@ export default function EditWishModal({
       return;
     }
 
-    // нова логіка: price — лише число рядком, currency — окремо (лише якщо ціна валідна)
+    // price — лише число рядком, currency — окремо (лише якщо ціна валідна)
     const hasPrice = Number.isFinite(priceValue);
     const priceString = hasPrice ? String(priceValue) : "";
+    const currencyUpper = currency.toUpperCase();
 
-    // валідовуємо проти wishSchema (переконайся, що там currency дозволена/обов'язкова при наявності price)
     const toValidate: Record<string, unknown> = {
       name,
       description,
-      price: priceString, // "" якщо пусто
+      price: priceString,
       image_url: nextImageUrl,
       product_url: productUrl,
       image_public_id: nextPublicId,
     };
-    if (hasPrice) toValidate.currency = currency;
+    if (hasPrice) toValidate.currency = currencyUpper;
 
     const parsed = wishSchema.safeParse(toValidate);
     if (!parsed.success) {
@@ -229,16 +226,13 @@ export default function EditWishModal({
         product_url: productUrl,
         price: priceString,
       };
-      if (hasPrice) body.currency = currency;
+      if (hasPrice) body.currency = currencyUpper;
 
-      const res = await fetch(
-        `/api/wishlists/${wishlistId}/wishes/${wish._id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        }
-      );
+      const res = await fetch(`/api/wishlists/${wishlistId}/wishes/${wish._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
       if (!res.ok) throw new Error("Failed to update wish");
 
       const updatedWish = await res.json();
@@ -258,12 +252,9 @@ export default function EditWishModal({
 
     setDeleting(true);
     try {
-      const res = await fetch(
-        `/api/wishlists/${wishlistId}/wishes/${wish._id}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const res = await fetch(`/api/wishlists/${wishlistId}/wishes/${wish._id}`, {
+        method: "DELETE",
+      });
       if (!res.ok) throw new Error("Failed to delete wish");
 
       toast.success("Wish deleted successfully!");
@@ -430,10 +421,11 @@ export default function EditWishModal({
                           : ""}
                       </div>
                     </div>
+
                     <select
                       className="select select-bordered w-full focus:outline-none focus:ring-2 focus:ring-primary/40"
                       value={currency}
-                      onChange={(e) => setCurrency(e.target.value)}
+                      onChange={(e) => setCurrency(e.target.value.toUpperCase())}
                       disabled={!Number.isFinite(priceValue)}
                       title={
                         !Number.isFinite(priceValue)

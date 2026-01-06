@@ -4,6 +4,7 @@ import { useRef, useState, Fragment, useEffect, useMemo } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import toast from "react-hot-toast";
 import { wishSchema } from "@/app/validation/schemas";
+import { CURRENCIES, SUPPORTED_CURRENCY_CODES } from "@/libs/currencies";
 
 interface AddWishModalProps {
   wishlistId: string;
@@ -12,21 +13,15 @@ interface AddWishModalProps {
   onWishAdded: () => void;
 }
 
-const CURRENCIES = [
-  { code: "USD", label: "USD — US Dollar" },
-  { code: "EUR", label: "EUR — Euro" },
-  { code: "GBP", label: "GBP — British Pound" },
-  { code: "CAD", label: "CAD — Canadian Dollar" },
-  { code: "UAH", label: "UAH — Ukrainian Hryvnia" },
-  { code: "PLN", label: "PLN — Polish Złoty" },
-  { code: "CZK", label: "CZK — Czech Koruna" },
-  { code: "TRY", label: "TRY — Turkish Lira" },
-];
-
-async function handleUploadImage(file: File): Promise<{ imageUrl: string; image_public_id: string }> {
+async function handleUploadImage(
+  file: File
+): Promise<{ imageUrl: string; image_public_id: string }> {
   const formData = new FormData();
   formData.append("file", file);
-  const res = await fetch("/api/upload-image", { method: "POST", body: formData });
+  const res = await fetch("/api/upload-image", {
+    method: "POST",
+    body: formData,
+  });
   if (!res.ok) throw new Error("Image upload failed");
   const data = await res.json();
   return { imageUrl: data.imageUrl, image_public_id: data.image_public_id };
@@ -53,11 +48,17 @@ export default function AddWishModal({
   useEffect(() => {
     if (!isOpen) return;
     const saved = localStorage.getItem("wishlify:lastCurrency");
-    if (saved) setCurrency(saved);
+    const normalized = (saved ?? "").toUpperCase();
+
+    if (SUPPORTED_CURRENCY_CODES.has(normalized)) {
+      setCurrency(normalized);
+    } else {
+      setCurrency("EUR");
+    }
   }, [isOpen]);
 
   useEffect(() => {
-    localStorage.setItem("wishlify:lastCurrency", currency);
+    localStorage.setItem("wishlify:lastCurrency", currency.toUpperCase());
   }, [currency]);
 
   // Нормалізація ціни
@@ -115,12 +116,12 @@ export default function AddWishModal({
         name,
         description,
         product_url: productUrl,
-        price: priceString,      // ← рядок ("" якщо порожньо)
+        price: priceString, // ← рядок ("" якщо порожньо)
         image_url,
         image_public_id,
       };
       // додаємо currency лише якщо є ціна
-      if (hasPrice) payload.currency = currency;
+      if (hasPrice) payload.currency = currency.toUpperCase();
 
       // 3) Валідація Zod (додай currency в wishSchema, якщо ще ні)
       const result = wishSchema.safeParse(payload);
@@ -136,7 +137,7 @@ export default function AddWishModal({
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Failed to add wish");
-console.log(payload)
+      console.log(payload);
       toast.success("Wish added successfully!");
       setIsOpen(false);
       onWishAdded();
@@ -246,7 +247,9 @@ console.log(payload)
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                      onChange={(e) =>
+                        setImageFile(e.target.files?.[0] || null)
+                      }
                     />
 
                     {imageFile && (
@@ -283,16 +286,22 @@ console.log(payload)
                         placeholder="Price (e.g. 199.99)"
                       />
                       <div className="mt-1 text-xs text-base-content/60 h-4">
-                        {Number.isFinite(priceValue) && formattedPreview ? `≈ ${formattedPreview}` : ""}
+                        {Number.isFinite(priceValue) && formattedPreview
+                          ? `≈ ${formattedPreview}`
+                          : ""}
                       </div>
                     </div>
 
                     <select
                       className="select select-bordered w-full focus:outline-none focus:ring-2 focus:ring-primary/40"
                       value={currency}
-                      onChange={(e) => setCurrency(e.target.value)}
+                      onChange={(e) => setCurrency(e.target.value.toUpperCase())}
                       disabled={!Number.isFinite(priceValue)}
-                      title={!Number.isFinite(priceValue) ? "Enter price to select currency" : "Currency"}
+                      title={
+                        !Number.isFinite(priceValue)
+                          ? "Enter price to select currency"
+                          : "Currency"
+                      }
                     >
                       {CURRENCIES.map((c) => (
                         <option key={c.code} value={c.code}>
@@ -312,7 +321,8 @@ console.log(payload)
                   </button>
 
                   <p className="text-[11px] hidden md:block text-base-content/60 text-center">
-                    Tip: Press <kbd className="kbd kbd-xs">Ctrl</kbd>+<kbd className="kbd kbd-xs">Enter</kbd> to add quickly.
+                    Tip: Press <kbd className="kbd kbd-xs">Ctrl</kbd>+
+                    <kbd className="kbd kbd-xs">Enter</kbd> to add quickly.
                   </p>
                 </div>
               </Dialog.Panel>

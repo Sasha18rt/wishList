@@ -3,7 +3,10 @@
 import React, { useMemo, useCallback, memo, useEffect, useState } from "react";
 import clsx from "clsx";
 import type { Wish, WishlistData } from "@/types/wishlist";
-
+import {
+  SUPPORTED_CURRENCY_CODES,
+  CURRENCY_SYMBOL_FALLBACK,
+} from "@/libs/currencies";
 type ViewMode = "list" | "grid" | "gallery";
 
 type Props = {
@@ -157,56 +160,42 @@ export default function WishesList({
     []
   );
 
-  const fmtPrice = useCallback((p?: string, c?: string) => {
-    if (!p) return "";
-    const n = Number(p);
-    const code = (c && /^[A-Z]{3}$/.test(c) ? c : "EUR") as
-      | "EUR"
-      | "USD"
-      | "GBP"
-      | "CAD"
-      | "UAH"
-      | "PLN"
-      | "CZK"
-      | "TRY";
-    if (!Number.isFinite(n)) return c ? `${p} (${c})` : p;
+const fmtPrice = useCallback((p?: string, c?: string) => {
+  if (!p) return "";
+  const n = Number(p);
 
-    let parts = new Intl.NumberFormat("lt-LT", {
+  const raw = (c ?? "").toUpperCase();
+  const code = SUPPORTED_CURRENCY_CODES.has(raw) ? raw : "EUR";
+
+  if (!Number.isFinite(n)) return c ? `${p} (${c})` : p;
+
+  let parts = new Intl.NumberFormat("lt-LT", {
+    style: "currency",
+    currency: code,
+    currencyDisplay: "symbol",
+    maximumFractionDigits: 2,
+  }).formatToParts(n);
+
+  let currPart = parts.find((x) => x.type === "currency")?.value;
+
+  if (!currPart || currPart.toUpperCase() === code) {
+    parts = new Intl.NumberFormat("lt-LT", {
       style: "currency",
       currency: code,
-      currencyDisplay: "symbol",
+      currencyDisplay: "narrowSymbol",
       maximumFractionDigits: 2,
     }).formatToParts(n);
-    let currPart = parts.find((x) => x.type === "currency")?.value;
+    currPart = parts.find((x) => x.type === "currency")?.value;
+  }
 
-    if (!currPart || currPart.toUpperCase() === code) {
-      parts = new Intl.NumberFormat("lt-LT", {
-        style: "currency",
-        currency: code,
-        currencyDisplay: "narrowSymbol",
-        maximumFractionDigits: 2,
-      }).formatToParts(n);
-      currPart = parts.find((x) => x.type === "currency")?.value;
-    }
-    const FALLBACK: Record<string, string> = {
-      USD: "$",
-      EUR: "€",
-      GBP: "£",
-      CAD: "CA$",
-      UAH: "₴",
-      PLN: "zł",
-      CZK: "Kč",
-      TRY: "₺",
-    };
-    const symbol =
-      currPart && currPart.toUpperCase() !== code
-        ? currPart
-        : FALLBACK[code] || code;
+  const symbol =
+    currPart && currPart.toUpperCase() !== code
+      ? currPart
+      : CURRENCY_SYMBOL_FALLBACK[code] || code;
 
-    return parts
-      .map((p) => (p.type === "currency" ? symbol : p.value))
-      .join("");
-  }, []);
+  return parts.map((p) => (p.type === "currency" ? symbol : p.value)).join("");
+}, []);
+
 
   const safeExternalLink = (url?: string) => !!url && /^https?:\/\//i.test(url);
   const items = (wishlist.wishes || []).slice(0, Math.max(0, visibleCount));
@@ -363,10 +352,10 @@ export default function WishesList({
               data-mine={isMine ? "true" : "false"}
               className={clsx(
                 "group bg-base-100 rounded-xl border shadow-sm hover:shadow-md transition overflow-hidden flex flex-col",
-                  "border-secondary",
+                "border-secondary",
                 // glow, коли зарезервовано
                 "data-[reserved=true]:border-base-300 ",
-               // "data-[reserved=true]:border-secondary data-[reserved=true]:shadow-[0_0_18px_2px_hsl(var(--s)/.35)]",
+                // "data-[reserved=true]:border-secondary data-[reserved=true]:shadow-[0_0_18px_2px_hsl(var(--s)/.35)]",
                 "data-[mine=true]:border-primary data-[mine=true]:shadow-[0_0_18px_2px_hsl(var(--p)/.35)]"
               )}
             >
@@ -434,11 +423,11 @@ export default function WishesList({
             data-mine={isMine ? "true" : "false"}
             className={clsx(
               "relative group overflow-visible rounded-xl border bg-base-100 shadow-sm hover:shadow-md transition data-[ready=false]:pointer-events-none",
-                "border-secondary",
-                // glow, коли зарезервовано
-                "data-[reserved=true]:border-base-300 ",  
+              "border-secondary",
+              // glow, коли зарезервовано
+              "data-[reserved=true]:border-base-300 "
               //  "data-[reserved=true]:border-secondary data-[reserved=true]:shadow-[0_0_18px_2px_hsl(var(--s)/.35)]",
-                //"data-[mine=true]:border-primary data-[mine=true]:shadow-[0_0_18px_2px_hsl(var(--p)/.35)]"
+              //"data-[mine=true]:border-primary data-[mine=true]:shadow-[0_0_18px_2px_hsl(var(--p)/.35)]"
             )}
           >
             {/* медіа-обгортач, щоб скейл і оверлей кліпались за радіусом */}
