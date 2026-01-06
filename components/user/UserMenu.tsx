@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import toast from "react-hot-toast";
 import UserProfileModal from "@/components/user/UserProfileModal";
-import { LogOut, User, List, Link } from "lucide-react";
+import { LogOut, User, List } from "lucide-react";
 
 export default function UserMenu() {
   const { data: session, status } = useSession();

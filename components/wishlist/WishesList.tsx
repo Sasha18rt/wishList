@@ -160,42 +160,43 @@ export default function WishesList({
     []
   );
 
-const fmtPrice = useCallback((p?: string, c?: string) => {
-  if (!p) return "";
-  const n = Number(p);
+  const fmtPrice = useCallback((p?: string, c?: string) => {
+    if (!p) return "";
+    const n = Number(p);
 
-  const raw = (c ?? "").toUpperCase();
-  const code = SUPPORTED_CURRENCY_CODES.has(raw) ? raw : "EUR";
+    const raw = (c ?? "").toUpperCase();
+    const code = SUPPORTED_CURRENCY_CODES.has(raw) ? raw : "EUR";
 
-  if (!Number.isFinite(n)) return c ? `${p} (${c})` : p;
+    if (!Number.isFinite(n)) return c ? `${p} (${c})` : p;
 
-  let parts = new Intl.NumberFormat("lt-LT", {
-    style: "currency",
-    currency: code,
-    currencyDisplay: "symbol",
-    maximumFractionDigits: 2,
-  }).formatToParts(n);
-
-  let currPart = parts.find((x) => x.type === "currency")?.value;
-
-  if (!currPart || currPart.toUpperCase() === code) {
-    parts = new Intl.NumberFormat("lt-LT", {
+    let parts = new Intl.NumberFormat("lt-LT", {
       style: "currency",
       currency: code,
-      currencyDisplay: "narrowSymbol",
+      currencyDisplay: "symbol",
       maximumFractionDigits: 2,
     }).formatToParts(n);
-    currPart = parts.find((x) => x.type === "currency")?.value;
-  }
 
-  const symbol =
-    currPart && currPart.toUpperCase() !== code
-      ? currPart
-      : CURRENCY_SYMBOL_FALLBACK[code] || code;
+    let currPart = parts.find((x) => x.type === "currency")?.value;
 
-  return parts.map((p) => (p.type === "currency" ? symbol : p.value)).join("");
-}, []);
+    if (!currPart || currPart.toUpperCase() === code) {
+      parts = new Intl.NumberFormat("lt-LT", {
+        style: "currency",
+        currency: code,
+        currencyDisplay: "narrowSymbol",
+        maximumFractionDigits: 2,
+      }).formatToParts(n);
+      currPart = parts.find((x) => x.type === "currency")?.value;
+    }
 
+    const symbol =
+      currPart && currPart.toUpperCase() !== code
+        ? currPart
+        : CURRENCY_SYMBOL_FALLBACK[code] || code;
+
+    return parts
+      .map((p) => (p.type === "currency" ? symbol : p.value))
+      .join("");
+  }, []);
 
   const safeExternalLink = (url?: string) => !!url && /^https?:\/\//i.test(url);
   const items = (wishlist.wishes || []).slice(0, Math.max(0, visibleCount));
@@ -219,10 +220,6 @@ const fmtPrice = useCallback((p?: string, c?: string) => {
       setGalleryReady(false);
     };
   }, [viewMode]);
-
-  // перевірка “чи це торкання” (для десктопів хай відкриває одразу)
-  const isTouchEvent = () =>
-    typeof window !== "undefined" && matchMedia("(hover: none)").matches;
 
   if (!items.length) {
     return (

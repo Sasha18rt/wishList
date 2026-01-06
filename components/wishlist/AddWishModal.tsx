@@ -5,6 +5,7 @@ import { Dialog, Transition } from "@headlessui/react";
 import toast from "react-hot-toast";
 import { wishSchema } from "@/app/validation/schemas";
 import { CURRENCIES, SUPPORTED_CURRENCY_CODES } from "@/libs/currencies";
+import type { KeyboardEvent } from "react";
 
 interface AddWishModalProps {
   wishlistId: string;
@@ -43,7 +44,7 @@ export default function AddWishModal({
   const [priceRaw, setPriceRaw] = useState(""); // користувацьке введення
   const [currency, setCurrency] = useState<string>("EUR");
   const [loading, setLoading] = useState(false);
-  const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     // щоб не спрацьовувало в textarea на звичайний Enter
     const isTextarea = (e.target as HTMLElement)?.tagName === "TEXTAREA";
 
@@ -83,7 +84,6 @@ export default function AddWishModal({
     const num = Number(normalized);
     return Number.isFinite(num) ? num : NaN;
   }, [priceRaw]);
-
 
   const resetForm = () => {
     setName("");
@@ -290,7 +290,6 @@ export default function AddWishModal({
                         className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-primary/40"
                         placeholder="Price (e.g. 199.99)"
                       />
-
                     </div>
 
                     <select

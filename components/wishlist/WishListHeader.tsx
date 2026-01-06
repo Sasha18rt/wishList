@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Settings, Plus  } from "lucide-react";
 import config from "@/config";
 import logo from "@/app/icon.png";
-import toast from "react-hot-toast";
 import React from "react";
 import ShareWishlistButton from "@/components/wishlist/ShareWishlistButton";
 
