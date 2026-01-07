@@ -88,6 +88,17 @@ export default async function AdminClicksPage({
             {/* Filters */}
             <form className="flex flex-wrap items-center gap-2">
               <label className="join">
+                <div className="join">
+                  <a
+                    className="btn btn-sm join-item btn-primary"
+                    href="/admin/clicks"
+                  >
+                    Clicks
+                  </a>
+                  <a className="btn btn-sm join-item" href="/admin/links">
+                    Links
+                  </a>
+                </div>
                 <span className="btn btn-sm join-item btn-ghost pointer-events-none">
                   Days
                 </span>
@@ -126,10 +137,16 @@ export default async function AdminClicksPage({
                 <a className="btn btn-sm join-item" href="/admin/clicks?days=7">
                   7d
                 </a>
-                <a className="btn btn-sm join-item" href="/admin/clicks?days=30">
+                <a
+                  className="btn btn-sm join-item"
+                  href="/admin/clicks?days=30"
+                >
                   30d
                 </a>
-                <a className="btn btn-sm join-item" href="/admin/clicks?days=90">
+                <a
+                  className="btn btn-sm join-item"
+                  href="/admin/clicks?days=90"
+                >
                   90d
                 </a>
               </div>
@@ -303,7 +320,8 @@ export default async function AdminClicksPage({
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="card-title">Recent clicks</h2>
               <div className="alert alert-info py-2 px-3 text-sm">
-                Tip: “Top domains” показує, де реально є сенс підключати рефералки.
+                Tip: “Top domains” показує, де реально є сенс підключати
+                рефералки.
               </div>
             </div>
 
