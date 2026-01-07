@@ -199,7 +199,42 @@ export default function WishesList({
   }, []);
 
   const safeExternalLink = (url?: string) => !!url && /^https?:\/\//i.test(url);
-  const items = (wishlist.wishes || []).slice(0, Math.max(0, visibleCount));
+
+  const wishlistId = (wishlist as any)._id ?? (wishlist as any).id ?? "";
+
+  const outboundLink = (_url?: string, wishId?: string) =>
+    wishId
+      ? `/go?wishId=${encodeURIComponent(
+          wishId
+        )}&wishlistId=${encodeURIComponent(wishlist._id)}`
+      : "";
+
+  const items = useMemo(() => {
+    const arr = (wishlist.wishes || []).slice(0, Math.max(0, visibleCount));
+
+    arr.sort((a, b) => {
+      const ra = reservationsByWishId.get(a._id);
+      const rb = reservationsByWishId.get(b._id);
+
+      const aReserved = ra ? 1 : 0;
+      const bReserved = rb ? 1 : 0;
+
+      // 1) спочатку НЕ зарезервовані (0), потім зарезервовані (1)
+      if (aReserved !== bReserved) return aReserved - bReserved;
+
+      // 2) (опційно) якщо обидва зарезервовані — твої вище
+      const aMine = ra?.user_id === sessionUserId ? 0 : 1;
+      const bMine = rb?.user_id === sessionUserId ? 0 : 1;
+      if (aMine !== bMine) return aMine - bMine;
+
+      // 3) (опційно) стабільний порядок: новіші/старіші
+      const aAdded = new Date((a as any).added_at ?? 0).getTime();
+      const bAdded = new Date((b as any).added_at ?? 0).getTime();
+      return bAdded - aAdded; // новіші вище
+    });
+
+    return arr;
+  }, [wishlist.wishes, visibleCount, reservationsByWishId, sessionUserId]);
 
   // анти-флеш hover у gallery
   const [galleryReady, setGalleryReady] = useState(false);
@@ -253,7 +288,7 @@ export default function WishesList({
             )}
             {safeExternalLink(wish.product_url) && (
               <a
-                href={wish.product_url}
+                href={outboundLink(wish.product_url, wish._id)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="link text-sm"
@@ -262,6 +297,7 @@ export default function WishesList({
                 View product
               </a>
             )}
+
             {wish.price && (
               <p className="text-sm">
                 {fmtPrice(wish.price, (wish as any).currency)}
@@ -382,7 +418,7 @@ export default function WishesList({
                   )}
                   {safeExternalLink(wish.product_url) && (
                     <a
-                      href={wish.product_url}
+                      href={outboundLink(wish.product_url, wish._id)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="link text-xs sm:text-sm"
@@ -391,6 +427,7 @@ export default function WishesList({
                       View product
                     </a>
                   )}
+
                   {wish.price && (
                     <p className="text-xs sm:text-sm">
                       {fmtPrice(wish.price, (wish as any).currency)}
@@ -431,7 +468,7 @@ export default function WishesList({
             <div className="relative rounded-xl overflow-hidden">
               {hasLink ? (
                 <a
-                  href={wish.product_url}
+                  href={outboundLink(wish.product_url, wish._id)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full h-full"
