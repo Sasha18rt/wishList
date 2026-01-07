@@ -18,7 +18,7 @@ function safeHref(url: string) {
     if (u.protocol !== "http:" && u.protocol !== "https:") return null;
     return u.toString();
   } catch {
-    return null;
+    return null; // ✅ не пустий блок
   }
 }
 
@@ -66,7 +66,7 @@ export default async function AdminLinksPage({
         _m: {
           $regexFind: {
             input: "$wishes.product_url",
-            regex: /^https?:\/\/([^\/?#]+)/,
+            regex: /^https?:\/\/([^/?#]+)/,
           },
         },
       },
