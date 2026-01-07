@@ -55,34 +55,30 @@ export default async function AdminLinksPage({
   const uniqueLinks = uniqueRes[0]?.total ?? 0;
 
   // 3) top domains
-  const topDomains = await Wishlist.aggregate<
-    { _id: string; clicks: number }[]
-  >([
-    { $unwind: "$wishes" },
-    { $match: { "wishes.product_url": { $type: "string", $ne: "" } } },
-    {
-      $addFields: {
-        _url: "$wishes.product_url",
-        _m: {
-          $regexFind: {
-            input: "$wishes.product_url",
-            regex: /^https?:\/\/([^/?#]+)/,
-          },
+  const topDomains = await Wishlist.aggregate<{ _id: string; clicks: number }>([
+  { $unwind: "$wishes" },
+  { $match: { "wishes.product_url": { $type: "string", $ne: "" } } },
+  {
+    $addFields: {
+      _m: {
+        $regexFind: {
+          input: "$wishes.product_url",
+          regex: /^https?:\/\/([^/?#]+)/,
         },
       },
     },
-    {
-      $addFields: {
-        hostname: {
-          $toLower: { $arrayElemAt: ["$_m.captures", 0] },
-        },
-      },
+  },
+  {
+    $addFields: {
+      hostname: { $toLower: { $arrayElemAt: ["$_m.captures", 0] } },
     },
-    { $match: { hostname: { $type: "string", $ne: "" } } },
-    { $group: { _id: "$hostname", clicks: { $sum: 1 } } },
-    { $sort: { clicks: -1 } },
-    { $limit: 20 },
-  ]);
+  },
+  { $match: { hostname: { $type: "string", $ne: "" } } },
+  { $group: { _id: "$hostname", clicks: { $sum: 1 } } },
+  { $sort: { clicks: -1 } },
+  { $limit: 20 },
+]);
+
 
   // 4) list links (distinct або всі)
   const list = distinct
