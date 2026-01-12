@@ -343,7 +343,10 @@ export default function WishesList({
                     decoding="async"
                   />
                 ) : (
-                  <div className="w-full aspect-[4/3] bg-base-200 flex items-center justify-center text-base-content/50">
+                  <div
+                    className="w-full aspect-[4/3] bg-base-200 flex items-center justify-center text-base-content/50"
+                    onClick={() => setActiveWishId(wish._id)}
+                  >
                     No image
                   </div>
                 )}
@@ -430,7 +433,7 @@ export default function WishesList({
                     decoding="async"
                   />
                 ) : (
-                  <div className="w-full aspect-square bg-base-200 flex items-center justify-center text-base-content/50">
+                  <div className="w-full aspect-square bg-base-200 flex items-center justify-center text-base-content/50" onClick={() => setActiveWishId(wish._id)}>
                     No image
                   </div>
                 )}
