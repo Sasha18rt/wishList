@@ -13,7 +13,6 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
-
 /**
  * PUT /api/wishlists/:id/wishes/:wishId
  * Оновлює один wish (тепер можна передавати currency)
@@ -22,7 +21,7 @@ interface WishUpdatePayload {
   name?: string;
   description?: string;
   product_url?: string;
-  price?: string;          // рядок або ""
+  price?: string; // рядок або ""
   currency?: string | null; // 3-літерний код або null
   image_url?: string | null;
   image_public_id?: string | null;
@@ -30,7 +29,7 @@ interface WishUpdatePayload {
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string; wishId: string } }
+  { params }: { params: { id: string; wishId: string } },
 ) {
   try {
     await connectMongo();
@@ -50,11 +49,14 @@ export async function PUT(
       user_id: user._id,
     });
     if (!wishlist) {
-      return NextResponse.json({ error: "Wishlist not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Wishlist not found" },
+        { status: 404 },
+      );
     }
 
     const wish = wishlist.wishes.find(
-      (w: any) => w._id.toString() === params.wishId
+      (w: any) => w._id.toString() === params.wishId,
     );
     if (!wish) {
       return NextResponse.json({ error: "Wish not found" }, { status: 404 });
@@ -68,31 +70,44 @@ export async function PUT(
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.errors[0].message },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Нормалізація вхідних полів
-    const name = typeof parsed.data.name === "string" ? parsed.data.name.trim() : undefined;
+    const name =
+      typeof parsed.data.name === "string"
+        ? parsed.data.name.trim()
+        : undefined;
     const description =
-      typeof parsed.data.description === "string" ? parsed.data.description : undefined;
+      typeof parsed.data.description === "string"
+        ? parsed.data.description
+        : undefined;
     const product_url =
-      typeof parsed.data.product_url === "string" ? parsed.data.product_url : undefined;
+      typeof parsed.data.product_url === "string"
+        ? parsed.data.product_url
+        : undefined;
 
-    const priceIn = typeof parsed.data.price === "string" ? parsed.data.price.trim() : "";
+    const priceIn =
+      typeof parsed.data.price === "string" ? parsed.data.price.trim() : "";
     // якщо хочеш зберігати null у БД для пустої ціни — постав priceDb = null замість ""
     const priceDb: string | null = priceIn === "" ? "" : String(priceIn);
 
     // Валюта: upcase + валідація коду
     let currencyIn =
-      typeof parsed.data.currency === "string" ? parsed.data.currency.trim().toUpperCase() : null;
+      typeof parsed.data.currency === "string"
+        ? parsed.data.currency.trim().toUpperCase()
+        : null;
 
     // Узгодженість: якщо є ціна → валюта обов’язкова; якщо ціни нема → валюта = null
     if (priceIn) {
       if (!currencyIn || !/^[A-Z]{3}$/.test(currencyIn)) {
         return NextResponse.json(
-          { error: "Currency is required and must be a 3-letter code when price is set" },
-          { status: 400 }
+          {
+            error:
+              "Currency is required and must be a 3-letter code when price is set",
+          },
+          { status: 400 },
         );
       }
     } else {
@@ -103,22 +118,22 @@ export async function PUT(
       typeof parsed.data.image_url === "string" && parsed.data.image_url
         ? parsed.data.image_url
         : parsed.data.image_url === null
-        ? null
-        : undefined;
+          ? null
+          : undefined;
 
     const image_public_id =
-      typeof parsed.data.image_public_id === "string" && parsed.data.image_public_id
+      typeof parsed.data.image_public_id === "string" &&
+      parsed.data.image_public_id
         ? parsed.data.image_public_id
         : parsed.data.image_public_id === null
-        ? null
-        : undefined;
+          ? null
+          : undefined;
 
     // ---------- Видалення старого зображення (якщо змінено public_id) ----------
     if (
       image_url !== undefined &&
       image_public_id !== undefined &&
       wish.image_public_id &&
-      image_public_id &&
       wish.image_public_id !== image_public_id
     ) {
       try {
@@ -153,11 +168,14 @@ export async function PUT(
         price: updated.price?.toString?.() ?? "",
         currency: updated.currency ?? null,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Error updating wish:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 /**
@@ -166,7 +184,7 @@ export async function PUT(
  */
 export async function DELETE(
   _req: Request,
-  { params }: { params: { id: string; wishId: string } }
+  { params }: { params: { id: string; wishId: string } },
 ) {
   try {
     await connectMongo();
@@ -196,7 +214,7 @@ export async function DELETE(
     }
 
     const wish = wishlist.wishes.find(
-      (w: any) => w._id.toString() === params.wishId
+      (w: any) => w._id.toString() === params.wishId,
     );
     if (!wish) {
       return new NextResponse(JSON.stringify({ error: "Wish not found" }), {
@@ -213,19 +231,19 @@ export async function DELETE(
     }
 
     wishlist.wishes = wishlist.wishes.filter(
-      (w: any) => w._id.toString() !== params.wishId
+      (w: any) => w._id.toString() !== params.wishId,
     );
     await wishlist.save();
 
     return new NextResponse(
       JSON.stringify({ message: "Wish deleted successfully" }),
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Error deleting wish:", error);
     return new NextResponse(
       JSON.stringify({ error: "Internal server error" }),
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

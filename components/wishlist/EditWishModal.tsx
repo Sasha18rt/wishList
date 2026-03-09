@@ -24,7 +24,7 @@ function validateImage(file: File) {
 }
 
 async function uploadImage(
-  file: File
+  file: File,
 ): Promise<{ imageUrl: string; image_public_id: string }> {
   const formData = new FormData();
   formData.append("file", file);
@@ -74,8 +74,8 @@ export default function EditWishModal({
   // поля
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [imagePublicId, setImagePublicId] = useState("");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imagePublicId, setImagePublicId] = useState<string | null>(null);
   const [productUrl, setProductUrl] = useState("");
 
   // значення ціни користувача (сирий інпут) і валюта
@@ -95,8 +95,8 @@ export default function EditWishModal({
 
     setName(wish.name ?? "");
     setDescription(wish.description || "");
-    setImageUrl(wish.image_url || "");
-    setImagePublicId(wish.image_public_id || "");
+    setImageUrl(wish.image_url || null);
+    setImagePublicId(wish.image_public_id || null);
     setProductUrl(wish.product_url || "");
 
     // 1) Сучасний випадок: price окремо, currency окремо
@@ -244,7 +244,7 @@ export default function EditWishModal({
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
-        }
+        },
       );
       if (!res.ok) throw new Error("Failed to update wish");
 
@@ -269,7 +269,7 @@ export default function EditWishModal({
         `/api/wishlists/${wishlistId}/wishes/${wish._id}`,
         {
           method: "DELETE",
-        }
+        },
       );
       if (!res.ok) throw new Error("Failed to delete wish");
 
@@ -286,8 +286,8 @@ export default function EditWishModal({
   // очистити картинку (прибрати існуючу)
   const clearImage = () => {
     setImageFile(null);
-    setImageUrl("");
-    setImagePublicId("");
+    setImageUrl(null);
+    setImagePublicId(null);
   };
 
   return (
@@ -305,7 +305,7 @@ export default function EditWishModal({
           <div className="fixed inset-0 bg-base-content/30 backdrop-blur-[2px]" />
         </Transition.Child>
 
-        <div className="fixed inset-0 overflow-y-auto" >
+        <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4">
             <Transition.Child
               as={Fragment}
