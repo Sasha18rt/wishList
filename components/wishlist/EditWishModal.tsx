@@ -7,19 +7,38 @@ import { wishSchema } from "@/app/validation/schemas";
 import { CURRENCIES, SUPPORTED_CURRENCY_CODES } from "@/libs/currencies";
 
 // --------- Константи/утиліти ---------
-const ALLOWED_EXT = ["jpg", "jpeg", "png", "gif"] as const;
-const ALLOWED_TYPE = ["image/jpeg", "image/png", "image/gif"] as const;
+// --------- Константи/утиліти ---------
+const ALLOWED_EXT = ["jpg", "jpeg", "png", "gif", "webp", "avif"] as const;
+
+const ALLOWED_TYPE = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/avif",
+] as const;
+
 const MAX_MB = 10;
 
 function validateImage(file: File) {
   const ext = file.name.split(".").pop()?.toLowerCase() || "";
-  if (!ALLOWED_EXT.includes(ext as any))
-    throw new Error("Upload failed: only JPG, PNG, GIF.");
-  if (!ALLOWED_TYPE.includes(file.type as any))
+
+  if (!ALLOWED_EXT.includes(ext as any)) {
+    throw new Error(
+      "Upload failed: supported formats are JPG, PNG, GIF, WEBP, AVIF.",
+    );
+  }
+
+  if (!ALLOWED_TYPE.includes(file.type as any)) {
     throw new Error("Upload failed: invalid file type.");
+  }
+
   const mb = file.size / 1024 / 1024;
-  if (mb > MAX_MB)
+
+  if (mb > MAX_MB) {
     throw new Error(`Upload failed: file is too large (> ${MAX_MB} MB).`);
+  }
+
   return true;
 }
 
