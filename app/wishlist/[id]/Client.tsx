@@ -36,7 +36,6 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "grid" | "gallery">("grid");
 
-  
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   // State mapping each wish's ID to its reserved user's name
   const [reservationUsers, setReservationUsers] = useState<
@@ -47,15 +46,15 @@ export default function WishlistPage({ serverWishlist }: WishlistPageProps) {
 
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-const viewModes = [
-  { id: "list", label: "List", icon: Rows3 },
-  { id: "grid", label: "Grid", icon: LayoutGrid },
-  { id: "gallery", label: "Gallery", icon: Images },
-] as const;
+  const viewModes = [
+    { id: "list", label: "List", icon: Rows3 },
+    { id: "grid", label: "Grid", icon: LayoutGrid },
+    { id: "gallery", label: "Gallery", icon: Images },
+  ] as const;
 
   const handleShowUserInfo = async (
     userId: string,
-    event?: React.MouseEvent<HTMLButtonElement>
+    event?: React.MouseEvent<HTMLButtonElement>,
   ) => {
     event?.currentTarget?.blur();
 
@@ -119,7 +118,7 @@ const viewModes = [
   useEffect(() => {
     document.documentElement.setAttribute(
       "data-theme",
-      wishlist?.theme || "default"
+      wishlist?.theme || "default",
     );
   }, [wishlist?.theme]);
 
@@ -151,7 +150,7 @@ const viewModes = [
       const results = await Promise.all(promises);
       const merged = results.reduce(
         (acc, item) => (item ? { ...acc, ...item } : acc),
-        {}
+        {},
       );
       setReservationUsers(merged);
     };
@@ -162,7 +161,7 @@ const viewModes = [
   // Handle reservation for a wish
   const handleReserve = async (
     wishId: string,
-    e: React.MouseEvent<HTMLButtonElement>
+    e: React.MouseEvent<HTMLButtonElement>,
   ) => {
     try {
       // 1) Виконуємо резервацію
@@ -244,16 +243,16 @@ const viewModes = [
         ? {
             ...w,
             reservations: (w.reservations || []).filter(
-              (r) => r.wish_id !== wishId
+              (r) => r.wish_id !== wishId,
             ),
           }
-        : w
+        : w,
     );
   };
   // Update a wish after editing
   const handleWishUpdated = (
     updatedWish: Wish,
-    event?: React.MouseEvent<HTMLButtonElement>
+    event?: React.MouseEvent<HTMLButtonElement>,
   ) => {
     (event?.currentTarget as HTMLButtonElement)?.blur();
 
@@ -266,7 +265,7 @@ const viewModes = [
       setWishlist({
         ...wishlist,
         wishes: wishlist.wishes.map((wish) =>
-          wish._id === updatedWish._id ? updatedWish : wish
+          wish._id === updatedWish._id ? updatedWish : wish,
         ),
       });
     }
@@ -318,7 +317,11 @@ const viewModes = [
             >
               {wishlist.title}
             </h1>
-
+            {wishlist?.description?.trim() && (
+              <p className="mt-3 text-sm sm:text-base text-base-content/70 text-center max-w-2xl mx-auto whitespace-pre-line">
+                {wishlist.description}
+              </p>
+            )}
             {isOwner ? null : (
               <div className="mt-4 text-left flex items-center justify-start space-x-2">
                 {wishlist.user_id.image ? (
@@ -343,47 +346,48 @@ const viewModes = [
           </section>
         )}
 
-<div className="relative -mx-4 px-4 mb-4">
-  <div className="overflow-x-auto no-scrollbar">
-    <div
-      role="tablist"
-      aria-label="View mode"
-      className="
+        <div className="relative -mx-4 px-4 mb-4">
+          <div className="overflow-x-auto no-scrollbar">
+            <div
+              role="tablist"
+              aria-label="View mode"
+              className="
         inline-flex w-auto
         rounded-md border overflow-hidden
         snap-x snap-mandatory
         divide-x
       "
-    >
-      {viewModes.map(({ id, label, icon: Icon }) => (
-        <button
-          key={id}
-          type="button"
-          role="tab"
-          aria-selected={viewMode === id}
-          onClick={() => setViewMode(id as typeof viewModes[number]['id'])}
-          title={`${label} view`}
-          aria-label={`${label} view`}
-          className={clsx(
-            // базові стилі
-            "px-3 py-2 flex items-center gap-2 font-medium transition-all duration-200",
-            "text-xs sm:text-sm whitespace-nowrap snap-start",
-            "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+            >
+              {viewModes.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={viewMode === id}
+                  onClick={() =>
+                    setViewMode(id as (typeof viewModes)[number]["id"])
+                  }
+                  title={`${label} view`}
+                  aria-label={`${label} view`}
+                  className={clsx(
+                    // базові стилі
+                    "px-3 py-2 flex items-center gap-2 font-medium transition-all duration-200",
+                    "text-xs sm:text-sm whitespace-nowrap snap-start",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
 
-            // стан
-            viewMode === id
-              ? "bg-primary text-primary-content"
-              : "bg-base-100 hover:bg-base-200"
-          )}
-        >
-          <Icon className="w-4 h-4 shrink-0" />
-          <span>{label}</span>
-        </button>
-      ))}
-    </div>
-  </div>
-</div>
-
+                    // стан
+                    viewMode === id
+                      ? "bg-primary text-primary-content"
+                      : "bg-base-100 hover:bg-base-200",
+                  )}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
 
         {/* List of Wishes */}
         <WishesList
@@ -415,6 +419,7 @@ const viewModes = [
           <EditWishlistModal
             wishlistId={wishlist._id}
             initialTitle={wishlist.title}
+            initialDescription={wishlist.description || ""}
             initialTheme={wishlist.theme || "default"}
             initialVisibility={wishlist.visibility || "private"}
             isOpen={isWishlistModalOpen}

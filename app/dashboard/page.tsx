@@ -17,6 +17,7 @@ export type Wishlist = {
   slug?: string;
   coverUrl?: string;
   visibility?: Visibility;
+  description?: string;
   theme?: string;
   updatedAt?: string;
   createdAt?: string;

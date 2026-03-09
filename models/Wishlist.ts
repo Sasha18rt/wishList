@@ -1,6 +1,6 @@
-// models/Wishlist.ts
 import mongoose from "mongoose";
-import User from "@/models/User"; // 👈 гарантує, що модель User зареєстрована
+import User from "@/models/User";
+
 const wishSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: String,
@@ -11,20 +11,30 @@ const wishSchema = new mongoose.Schema({
   currency: {
     type: String,
     trim: true,
-    default: "EUR", 
+    default: "EUR",
   },
   added_at: { type: Date, default: Date.now },
 });
 
 const wishlistSchema = new mongoose.Schema(
   {
-    user_id: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    user_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     title: { type: String, required: true },
+    description: { type: String, default: "" }, // 👈 ДОДАНО
     theme: { type: String, default: "default" },
-    visibility: { type: String, enum: ["public", "private"], default: "private" },
+    visibility: {
+      type: String,
+      enum: ["public", "private"],
+      default: "private",
+    },
     wishes: [wishSchema],
   },
-  { timestamps: true } // 👈 краще, ніж вручну created_at
+  { timestamps: true }
 );
 
-export default mongoose.models.Wishlist || mongoose.model("Wishlist", wishlistSchema);
+export default mongoose.models.Wishlist ||
+  mongoose.model("Wishlist", wishlistSchema);

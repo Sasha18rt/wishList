@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useState, Fragment, useEffect } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import toast from "react-hot-toast";
 import { wishListSchema } from "@/app/validation/schemas";
@@ -10,18 +10,20 @@ interface EditWishlistModalProps {
   initialTitle: string;
   initialTheme: string;
   initialVisibility: string;
+  initialDescription: string;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   onUpdate: (updatedWishlist: Wishlist) => void;
 }
 
 export interface Wishlist {
-  deleted?: any;
+  deleted?: boolean;
   _id: string;
   title: string;
+  description: string;
   theme: string;
   visibility: string;
-  created_at: string;
+  created_at?: string;
 }
 
 export default function EditWishlistModal({
@@ -29,35 +31,64 @@ export default function EditWishlistModal({
   initialTitle,
   initialTheme,
   initialVisibility,
+  initialDescription,
   isOpen,
   setIsOpen,
   onUpdate,
 }: EditWishlistModalProps) {
   const [title, setTitle] = useState(initialTitle);
+  const [description, setDescription] = useState(initialDescription || "");
   const [theme, setTheme] = useState(initialTheme);
   const [visibility, setVisibility] = useState(initialVisibility);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setTitle(initialTitle);
+    setDescription(initialDescription || "");
+    setTheme(initialTheme);
+    setVisibility(initialVisibility);
+  }, [
+    isOpen,
+    initialTitle,
+    initialDescription,
+    initialTheme,
+    initialVisibility,
+  ]);
+
   const handleUpdate = async () => {
     try {
-      const result = wishListSchema.safeParse({ title });
+      const payload = {
+        title: title.trim(),
+        description: description.trim(),
+        theme,
+        visibility,
+      };
+
+      const result = wishListSchema.safeParse(payload);
       if (!result.success) {
         toast.error(result.error.errors[0].message);
         return;
       }
+
       setLoading(true);
+
       const response = await fetch(`/api/wishlists/${wishlistId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, theme, visibility }),
+        body: JSON.stringify(payload),
       });
 
-      if (!response.ok) throw new Error("Failed to update wishlist");
+      const data = await response.json();
 
-      const updatedWishlist: Wishlist = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to update wishlist");
+      }
+
       toast.success("Wishlist updated successfully!");
       setIsOpen(false);
-      onUpdate(updatedWishlist);
+      onUpdate(data);
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -67,21 +98,29 @@ export default function EditWishlistModal({
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this wishlist?")) return;
+
     try {
       setLoading(true);
+
       const response = await fetch(`/api/wishlists/${wishlistId}`, {
         method: "DELETE",
       });
-      if (!response.ok) throw new Error("Failed to delete wishlist");
+
+      const data = await response.json().catch((): null => null);
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to delete wishlist");
+      }
 
       toast.success("Wishlist deleted successfully!");
       setIsOpen(false);
+
       onUpdate({
         _id: wishlistId,
         title: "",
+        description: "",
         theme: "",
         visibility: "",
-        created_at: "",
         deleted: true,
       });
     } catch (err) {
@@ -96,7 +135,7 @@ export default function EditWishlistModal({
       <Dialog
         as="div"
         className="relative z-50"
-        onClose={() => setIsOpen(false)}
+        onClose={() => !loading && setIsOpen(false)}
       >
         <Transition.Child
           as={Fragment}
@@ -107,7 +146,7 @@ export default function EditWishlistModal({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-neutral-focus bg-opacity-50" />
+          <div className="fixed inset-0 bg-neutral-focus/50" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">
@@ -121,35 +160,45 @@ export default function EditWishlistModal({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="relative w-full sm:w-[90%] max-w-lg transform text-left align-middle shadow-xl transition-all rounded-xl bg-base-100 p-6">
-                {/* Header */}
-                <div className="flex justify-between items-center mb-4">
-                  <Dialog.Title as="h2" className="font-semibold text-xl">
+              <Dialog.Panel className="relative w-full sm:w-[90%] max-w-lg transform rounded-xl bg-base-100 p-6 text-left align-middle shadow-xl transition-all">
+                <div className="mb-4 flex items-center justify-between">
+                  <Dialog.Title as="h2" className="text-xl font-semibold">
                     Edit Wishlist
                   </Dialog.Title>
+
                   <button
                     className="btn btn-square btn-ghost btn-sm"
                     onClick={() => setIsOpen(false)}
+                    disabled={loading}
+                    aria-label="Close"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       viewBox="0 0 20 20"
                       fill="currentColor"
-                      className="w-6 h-6"
+                      className="h-6 w-6"
                     >
                       <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
                     </svg>
                   </button>
                 </div>
 
-                {/* Form */}
                 <div className="flex flex-col gap-4">
                   <input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     className="input input-bordered w-full"
-                    placeholder="Wishlist Title"
+                    placeholder="Wishlist title"
+                  />
+
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="textarea textarea-bordered w-full"
+                    placeholder="Description (optional)"
+                    rows={4}
+                    maxLength={500}
                   />
 
                   <select
@@ -175,19 +224,19 @@ export default function EditWishlistModal({
                     <option value="private">Private</option>
                   </select>
 
-                  {/* Buttons */}
-                  <div className="flex gap-1">
+                  <div className="flex gap-2 pt-2">
                     <button
                       onClick={handleDelete}
                       className="btn btn-error w-1/2"
                       disabled={loading}
                     >
-                      {loading ? "Saving..." : "Delete"}
+                      {loading ? "Please wait..." : "Delete"}
                     </button>
+
                     <button
                       onClick={handleUpdate}
                       className="btn btn-success w-1/2"
-                      disabled={loading}
+                      disabled={loading || !title.trim()}
                     >
                       {loading ? "Saving..." : "Update"}
                     </button>

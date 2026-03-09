@@ -2,8 +2,16 @@
 
 import { wishListSchema } from "@/app/validation/schemas";
 import { Dialog, Transition } from "@headlessui/react";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import toast from "react-hot-toast";
+
+type Wishlist = {
+  _id: string;
+  title: string;
+  description: string;
+  theme: string;
+  visibility: string;
+};
 
 export default function CreateWishlistModal({
   isModalOpen,
@@ -12,56 +20,63 @@ export default function CreateWishlistModal({
 }: {
   isModalOpen: boolean;
   setIsModalOpen: (open: boolean) => void;
-  onCreated: (newWishlist: any) => void;
+  onCreated: (newWishlist: Wishlist) => void;
 }) {
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [theme, setTheme] = useState("default");
   const [visibility, setVisibility] = useState("public");
   const [loading, setLoading] = useState(false);
 
-  const handleCreateWishlist = async () => {
+  useEffect(() => {
+    if (!isModalOpen) return;
 
-    const result = wishListSchema.safeParse({ title });
+    setTitle("");
+    setDescription("");
+    setTheme("default");
+    setVisibility("public");
+  }, [isModalOpen]);
+
+  const handleCreateWishlist = async () => {
+    const payload = {
+      title: title.trim(),
+      description: description.trim(),
+      theme,
+      visibility,
+    };
+
+    const result = wishListSchema.safeParse(payload);
     if (!result.success) {
       toast.error(result.error.errors[0].message);
       return;
     }
+
     setLoading(true);
 
     try {
       const response = await fetch("/api/wishlists", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, theme, visibility }),
+        body: JSON.stringify(payload),
       });
-      const newWishlist = await response.json();
+
+      const data = await response.json().catch((): null => null);
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Failed to create wishlist");
+        throw new Error(data?.error || "Failed to create wishlist");
       }
 
       toast.success("Wishlist created successfully!");
-      setTitle("");
-      onCreated(newWishlist);
-
-      setIsModalOpen(false)
-
+      onCreated(data);
+      setIsModalOpen(false);
     } catch (error) {
-      console.error("Error:", error);
-      let errorMessage = "Something went wrong!";
+      const message =
+        error instanceof Error ? error.message : "Something went wrong";
 
-      if (error.message.includes("This wishlist name is already taken")) {
+      if (message.includes("already taken")) {
         toast.error("Name already taken. Try another one!");
       } else {
-        try {
-          const parsedError = JSON.parse(error.message);
-          errorMessage = parsedError.error;
-        } catch (e) {
-          errorMessage = error.message;
-        }
-
-        toast.error(` ${errorMessage}`);
+        toast.error(message);
       }
     } finally {
       setLoading(false);
@@ -73,7 +88,7 @@ export default function CreateWishlistModal({
       <Dialog
         as="div"
         className="relative z-50"
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => !loading && setIsModalOpen(false)}
       >
         <Transition.Child
           as={Fragment}
@@ -84,11 +99,11 @@ export default function CreateWishlistModal({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-neutral-focus bg-opacity-50" />
+          <div className="fixed inset-0 bg-neutral-focus/50" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-start md:items-center justify-center p-2">
+          <div className="flex min-h-full items-start justify-center p-2 md:items-center">
             <Transition.Child
               as={Fragment}
               enter="ease-out duration-300"
@@ -98,14 +113,16 @@ export default function CreateWishlistModal({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="relative w-full max-w-lg overflow-visible transform text-left align-middle shadow-xl transition-all rounded-xl bg-base-100 p-6 md:p-8">
-                <div className="flex justify-between items-center mb-4">
+              <Dialog.Panel className="relative w-full max-w-lg transform overflow-visible rounded-xl bg-base-100 p-6 text-left align-middle shadow-xl transition-all md:p-8">
+                <div className="mb-4 flex items-center justify-between">
                   <Dialog.Title as="h2" className="font-semibold">
                     Create Wishlist
                   </Dialog.Title>
                   <button
                     className="btn btn-square btn-ghost btn-sm"
                     onClick={() => setIsModalOpen(false)}
+                    disabled={loading}
+                    aria-label="Close"
                   >
                     ✕
                   </button>
@@ -114,10 +131,19 @@ export default function CreateWishlistModal({
                 <div className="flex flex-col gap-4">
                   <input
                     type="text"
-                    placeholder="Wishlist Title"
+                    placeholder="Wishlist title"
                     className="input input-bordered w-full"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
+                  />
+
+                  <textarea
+                    placeholder="Description (optional)"
+                    className="textarea textarea-bordered w-full"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={4}
+                    maxLength={500}
                   />
 
                   <select
@@ -125,7 +151,7 @@ export default function CreateWishlistModal({
                     value={theme}
                     onChange={(e) => setTheme(e.target.value)}
                   >
-                     <option value="default">Default</option>
+                    <option value="default">Default</option>
                     <option value="halloween">Halloween</option>
                     <option value="pastel">Pastel</option>
                     <option value="retro">Retro</option>
@@ -140,16 +166,15 @@ export default function CreateWishlistModal({
                     onChange={(e) => setVisibility(e.target.value)}
                   >
                     <option value="public">Public</option>
-
                     <option value="private">Private</option>
                   </select>
 
                   <button
                     className={`btn btn-primary w-full ${
-                      loading ? "opacity-50 cursor-not-allowed" : ""
+                      loading ? "cursor-not-allowed opacity-50" : ""
                     }`}
                     onClick={handleCreateWishlist}
-                    disabled={loading}
+                    disabled={loading || !title.trim()}
                   >
                     {loading ? "Creating..." : "Create Wishlist"}
                   </button>

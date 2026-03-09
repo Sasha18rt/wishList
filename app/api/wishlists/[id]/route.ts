@@ -89,23 +89,29 @@ export async function GET(
  * @route PUT /api/wishlists/:id
  * @access Private (Authenticated Users)
  */
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     await connectMongo();
     const session = await getServerSession(authOptions);
 
     if (!session) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+      });
     }
 
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
-      return new Response(JSON.stringify({ error: "User not found" }), { status: 404 });
+      return new Response(JSON.stringify({ error: "User not found" }), {
+        status: 404,
+      });
     }
 
-    
     const body = await req.json();
-    const { title, theme, visibility } = body;
+    const { title, description, theme, visibility } = body;
 
     const parseResult = wishListSchema.safeParse(body);
     if (!parseResult.success) {
@@ -114,24 +120,32 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
+
     const updatedWishlist = await Wishlist.findOneAndUpdate(
       { _id: params.id, user_id: user._id },
-      { title, theme, visibility },
+      {
+        title,
+        description: description?.trim() || "", // 👈 ДОДАНО
+        theme,
+        visibility,
+      },
       { new: true }
     );
 
     if (!updatedWishlist) {
-      return new Response(JSON.stringify({ error: "Wishlist not found" }), { status: 404 });
+      return new Response(JSON.stringify({ error: "Wishlist not found" }), {
+        status: 404,
+      });
     }
 
     return new Response(JSON.stringify(updatedWishlist), { status: 200 });
-
   } catch (error) {
     console.error("Error updating wishlist:", error);
-    return new Response(JSON.stringify({ error: "Internal server error" }), { status: 500 });
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+    });
   }
 }
-
 /**
  * @desc Delete a specific wishlist by ID
  * @route DELETE /api/wishlists/:id

@@ -14,19 +14,69 @@ interface AddWishModalProps {
   onWishAdded: () => void;
 }
 
+const ALLOWED_EXT = ["jpg", "jpeg", "png", "gif", "webp", "avif"] as const;
+const ALLOWED_TYPE = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/avif",
+] as const;
+const MAX_MB = 10;
+
+function validateImage(file: File) {
+  const ext = file.name.split(".").pop()?.toLowerCase() || "";
+
+  if (!ALLOWED_EXT.includes(ext as (typeof ALLOWED_EXT)[number])) {
+    throw new Error(
+      "Upload failed: supported formats are JPG, PNG, GIF, WEBP, AVIF."
+    );
+  }
+
+  if (!ALLOWED_TYPE.includes(file.type as (typeof ALLOWED_TYPE)[number])) {
+    throw new Error("Upload failed: invalid file type.");
+  }
+
+  const mb = file.size / 1024 / 1024;
+  if (mb > MAX_MB) {
+    throw new Error(`Upload failed: file is too large (> ${MAX_MB} MB).`);
+  }
+
+  return true;
+}
+
 async function handleUploadImage(
   file: File
 ): Promise<{ imageUrl: string; image_public_id: string }> {
   const formData = new FormData();
   formData.append("file", file);
+
   const res = await fetch("/api/upload-image", {
     method: "POST",
     body: formData,
   });
-  if (!res.ok) throw new Error("Image upload failed");
-  const data = await res.json();
-  return { imageUrl: data.imageUrl, image_public_id: data.image_public_id };
+
+  const data = await res.json().catch((): null => null);
+
+  if (!res.ok) {
+    throw new Error(data?.error || "Image upload failed");
+  }
+
+  return {
+    imageUrl: data.imageUrl,
+    image_public_id: data.image_public_id,
+  };
 }
+
+type AddWishPayload = {
+  name: string;
+  description?: string;
+  product_url?: string;
+  price: string;
+  currency?: string | null;
+  image_url?: string | null;
+  image_public_id?: string | null;
+};
 
 export default function AddWishModal({
   wishlistId,
@@ -39,13 +89,12 @@ export default function AddWishModal({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePublicId, setImagePublicId] = useState<string | null>(null);
   const [productUrl, setProductUrl] = useState("");
-  const [priceRaw, setPriceRaw] = useState(""); // користувацьке введення
+  const [priceRaw, setPriceRaw] = useState("");
   const [currency, setCurrency] = useState<string>("EUR");
   const [loading, setLoading] = useState(false);
+
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    // щоб не спрацьовувало в textarea на звичайний Enter
     const isTextarea = (e.target as HTMLElement)?.tagName === "TEXTAREA";
 
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
@@ -54,16 +103,15 @@ export default function AddWishModal({
       return;
     }
 
-    // опціонально: звичайний Enter (тільки якщо не textarea)
     if (!isTextarea && e.key === "Enter") {
       e.preventDefault();
       if (!loading) void handleAddWish();
     }
   };
 
-  // Підставляємо останню обрану валюту
   useEffect(() => {
     if (!isOpen) return;
+
     const saved = localStorage.getItem("wishlify:lastCurrency");
     const normalized = (saved ?? "").toUpperCase();
 
@@ -78,7 +126,6 @@ export default function AddWishModal({
     localStorage.setItem("wishlify:lastCurrency", currency.toUpperCase());
   }, [currency]);
 
-  // Нормалізація ціни
   const priceValue = useMemo(() => {
     const normalized = priceRaw.replace(",", ".").replace(/[^\d.]/g, "");
     const num = Number(normalized);
@@ -89,9 +136,20 @@ export default function AddWishModal({
     setName("");
     setDescription("");
     setImageFile(null);
-    setImagePublicId(null);
     setProductUrl("");
     setPriceRaw("");
+    setCurrency("EUR");
+  };
+
+  const pickFile = (file?: File | null) => {
+    if (!file) return;
+
+    try {
+      validateImage(file);
+      setImageFile(file);
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
   };
 
   const handleAddWish = async () => {
@@ -101,54 +159,55 @@ export default function AddWishModal({
     }
 
     setLoading(true);
+
     try {
-      // 1) upload image (опціонально)
-      let image_url = "";
-      let image_public_id = "";
+      let image_url: string | null = null;
+      let image_public_id: string | null = null;
+
       if (imageFile) {
+        validateImage(imageFile);
         const upload = await handleUploadImage(imageFile);
         image_url = upload.imageUrl;
         image_public_id = upload.image_public_id;
-        setImagePublicId(image_public_id);
       }
 
-      // 2) Формуємо price (рядок) та currency (окремо)
       const hasPrice = Number.isFinite(priceValue);
-      const priceString = hasPrice ? String(priceValue) : ""; // зберігаємо тільки число рядком
+      const priceString = hasPrice ? String(priceValue) : "";
 
-      // payload, який очікує бекенд/схема
-      const payload: any = {
-        name,
-        description,
-        product_url: productUrl,
-        price: priceString, // ← рядок ("" якщо порожньо)
+      const payload: AddWishPayload = {
+        name: name.trim(),
+        description: description.trim(),
+        product_url: productUrl.trim(),
+        price: priceString,
         image_url,
         image_public_id,
+        currency: hasPrice ? currency.toUpperCase() : null,
       };
-      // додаємо currency лише якщо є ціна
-      if (hasPrice) payload.currency = currency.toUpperCase();
 
-      // 3) Валідація Zod (додай currency в wishSchema, якщо ще ні)
       const result = wishSchema.safeParse(payload);
       if (!result.success) {
         toast.error(result.error.errors[0].message);
         return;
       }
 
-      // 4) POST
       const res = await fetch(`/api/wishlists/${wishlistId}/wishes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Failed to add wish");
-      console.log(payload);
+
+      const data = await res.json().catch((): null => null);
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to add wish");
+      }
+
       toast.success("Wish added successfully!");
       setIsOpen(false);
       onWishAdded();
       resetForm();
-    } catch (err: any) {
-      toast.error(err?.message || "Something went wrong");
+    } catch (err) {
+      toast.error((err as Error).message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -185,21 +244,20 @@ export default function AddWishModal({
               leaveTo="opacity-0 translate-y-1 sm:scale-95"
             >
               <Dialog.Panel className="w-full sm:w-[90%] max-w-md rounded-xl bg-base-100 p-6 shadow-xl">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <Dialog.Title className="font-semibold text-xl">
+                <div className="mb-4 flex items-center justify-between">
+                  <Dialog.Title className="text-xl font-semibold">
                     Add New Wish
                   </Dialog.Title>
                   <button
                     className="btn btn-square btn-ghost btn-sm focus:outline-none"
                     onClick={close}
                     aria-label="Close"
+                    disabled={loading}
                   >
                     ✕
                   </button>
                 </div>
 
-                {/* Form */}
                 <div className="flex flex-col gap-4">
                   <input
                     type="text"
@@ -217,7 +275,6 @@ export default function AddWishModal({
                     rows={3}
                   />
 
-                  {/* Image upload */}
                   <div className="flex flex-col gap-3">
                     <label
                       ref={dropRef}
@@ -225,20 +282,15 @@ export default function AddWishModal({
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => {
                         e.preventDefault();
-                        const file = e.dataTransfer.files?.[0];
-                        if (file?.type.startsWith("image/")) {
-                          setImageFile(file);
-                        } else {
-                          toast.error("Only image files allowed");
-                        }
+                        pickFile(e.dataTransfer.files?.[0] || null);
                       }}
-                      className="w-full border-2 border-dashed border-base-content/20 rounded-xl cursor-pointer p-4 text-center hover:border-primary transition"
+                      className="w-full cursor-pointer rounded-xl border-2 border-dashed border-base-content/20 p-4 text-center transition hover:border-primary"
                     >
                       {imageFile ? (
                         <img
                           src={URL.createObjectURL(imageFile)}
                           alt="Preview"
-                          className="w-full h-40 object-cover rounded-md"
+                          className="h-40 w-full rounded-md object-cover"
                         />
                       ) : (
                         <span className="text-sm opacity-70">
@@ -250,28 +302,22 @@ export default function AddWishModal({
                     <input
                       id="imageUpload"
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/gif,image/webp,image/avif"
                       className="hidden"
-                      onChange={(e) =>
-                        setImageFile(e.target.files?.[0] || null)
-                      }
+                      onChange={(e) => pickFile(e.target.files?.[0] || null)}
                     />
 
                     {imageFile && (
                       <button
                         type="button"
                         className="btn btn-xs btn-outline btn-error w-fit"
-                        onClick={() => {
-                          setImageFile(null);
-                          setImagePublicId(null);
-                        }}
+                        onClick={() => setImageFile(null)}
                       >
                         Remove image
                       </button>
                     )}
                   </div>
 
-                  {/* Product URL */}
                   <input
                     type="url"
                     value={productUrl}
@@ -280,8 +326,7 @@ export default function AddWishModal({
                     placeholder="Product URL (optional)"
                   />
 
-                  {/* Price + Currency */}
-                  <div className="grid grid-cols-3 gap-3 items-start">
+                  <div className="grid grid-cols-3 items-start gap-3">
                     <div className="col-span-2">
                       <input
                         inputMode="decimal"
@@ -313,7 +358,6 @@ export default function AddWishModal({
                     </select>
                   </div>
 
-                  {/* Actions */}
                   <button
                     onClick={handleAddWish}
                     className="btn btn-primary w-full"
@@ -322,7 +366,7 @@ export default function AddWishModal({
                     {loading ? "Adding..." : "Add Wish"}
                   </button>
 
-                  <p className="text-[11px] hidden md:block text-base-content/60 text-center">
+                  <p className="hidden text-center text-[11px] text-base-content/60 md:block">
                     Tip: Press <kbd className="kbd kbd-xs">Ctrl</kbd>+
                     <kbd className="kbd kbd-xs">Enter</kbd> to add quickly.
                   </p>

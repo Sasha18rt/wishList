@@ -16,20 +16,22 @@ export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
 
     if (!session) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { 
-        status: 401, headers: { "Content-Type": "application/json" } 
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
-      return new Response(JSON.stringify({ error: "User not found" }), { 
-        status: 404, headers: { "Content-Type": "application/json" } 
+      return new Response(JSON.stringify({ error: "User not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
     const body = await req.json();
-    const { title, theme, visibility } = body;
+    const { title, description, theme, visibility } = body;
 
     const parseResult = wishListSchema.safeParse(body);
     if (!parseResult.success) {
@@ -38,34 +40,44 @@ export async function POST(req: Request) {
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
-    const existingWishlist = await Wishlist.findOne({ user_id: user._id, title });
+
+    const existingWishlist = await Wishlist.findOne({
+      user_id: user._id,
+      title,
+    });
 
     if (existingWishlist) {
-      return new Response(JSON.stringify({ error: "This wishlist name is already taken. Try another name." }), { 
-        status: 409, headers: { "Content-Type": "application/json" } 
-      });
+      return new Response(
+        JSON.stringify({
+          error: "This wishlist name is already taken. Try another name.",
+        }),
+        {
+          status: 409,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
-    // Create a new wishlist
     const newWishlist = await Wishlist.create({
       user_id: user._id,
       title,
+      description: description?.trim() || "", // 👈 ДОДАНО
       theme: theme || "default",
       visibility: visibility || "private",
     });
 
-    return new Response(JSON.stringify(newWishlist), { 
-      status: 201, headers: { "Content-Type": "application/json" } 
+    return new Response(JSON.stringify(newWishlist), {
+      status: 201,
+      headers: { "Content-Type": "application/json" },
     });
-
   } catch (error) {
     console.error("Error creating wishlist:", error);
-    return new Response(JSON.stringify({ error: "Internal server error" }), { 
-      status: 500, headers: { "Content-Type": "application/json" } 
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
     });
   }
 }
-
 /**
  * @desc Get all wishlists for the authenticated user
  * @route GET /api/wishlists

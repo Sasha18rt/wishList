@@ -91,6 +91,7 @@ export default function WishlistList({
           initialTitle={selectedWishlist.title}
           initialTheme={selectedWishlist.theme ?? ""}
           initialVisibility={String(selectedWishlist.visibility ?? "private")}
+          initialDescription={selectedWishlist.description ?? ""}
           isOpen={isModalOpen}
           setIsOpen={setIsModalOpen}
           onUpdate={(updated: any) => {

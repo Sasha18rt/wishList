@@ -7,7 +7,6 @@ import { wishSchema } from "@/app/validation/schemas";
 import { CURRENCIES, SUPPORTED_CURRENCY_CODES } from "@/libs/currencies";
 
 // --------- Константи/утиліти ---------
-// --------- Константи/утиліти ---------
 const ALLOWED_EXT = ["jpg", "jpeg", "png", "gif", "webp", "avif"] as const;
 
 const ALLOWED_TYPE = [

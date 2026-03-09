@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/libs/next-auth";
 import connectMongo from "@/libs/mongoose";
@@ -11,17 +12,26 @@ export async function GET(
 ) {
   try {
     const { id } = params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return new Response(JSON.stringify({ error: "Invalid wishlist id" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     await connectMongo();
 
     const session = await getServerSession(authOptions);
-    const currentUserId = session?.user?.id;
+    const currentUserId = session?.user?.id ?? null;
 
-    // 1) Отримуємо вішлист + власника
-    const wishlist = await Wishlist.findById(id).populate({
-      path: "user_id",
-      model: User,
-      select: "name email nickname image",
-    });
+    const wishlist = await Wishlist.findById(id)
+      .populate({
+        path: "user_id",
+        model: User,
+        select: "name email nickname image",
+      })
+      .lean() as any;
 
     if (!wishlist) {
       return new Response(JSON.stringify({ error: "Wishlist not found" }), {
@@ -30,10 +40,13 @@ export async function GET(
       });
     }
 
-    const ownerId = wishlist.user_id?._id?.toString();
-    const isOwner = ownerId && currentUserId === ownerId;
+    const ownerId =
+      typeof wishlist.user_id === "object" && wishlist.user_id?._id
+        ? String(wishlist.user_id._id)
+        : null;
 
-    // 2) Якщо приватний — доступ лише власнику
+    const isOwner = !!ownerId && currentUserId === ownerId;
+
     if (wishlist.visibility !== "public" && !isOwner) {
       return new Response(JSON.stringify({ error: "Wishlist is not public" }), {
         status: 403,
@@ -41,12 +54,12 @@ export async function GET(
       });
     }
 
-    // 3) Зберігаємо "нещодавно переглянуті" для не-власника
     if (session?.user?.email && !isOwner) {
       await User.updateOne(
         { email: session.user.email },
         { $pull: { recentlyViewed: { wishlistId: wishlist._id } } }
       );
+
       await User.updateOne(
         { email: session.user.email },
         {
@@ -61,38 +74,44 @@ export async function GET(
       );
     }
 
-    // 4) Резервації цього вішлисту
-    const reservations = await Reservation.find({ wishlist_id: id });
+    const reservations = await Reservation.find({
+      wishlist_id: wishlist._id,
+    }).lean();
 
-    // 5) Формуємо відповідь + НОРМАЛІЗАЦІЯ wishes
-    const wishlistObj: any = wishlist.toObject();
+    const normalizedWishes = Array.isArray(wishlist.wishes)
+      ? wishlist.wishes.map((w: any) => {
+          let priceStr = w?.price != null ? String(w.price) : "";
+          let currency: string | null = w?.currency ?? null;
 
-    if (Array.isArray(wishlistObj.wishes)) {
-      wishlistObj.wishes = wishlistObj.wishes.map((w: any) => {
-        // базові значення
-        let priceStr = w?.price != null ? String(w.price) : "";
-        let currency: string | null = w?.currency ?? null;
+          if (!currency && typeof w?.price === "string") {
+            const m = w.price.match(
+              /^\s*([0-9]+(?:[.,][0-9]+)?)\s+([A-Z]{3})\s*$/
+            );
 
-        // legacy: якщо в price лежить "199.99 USD" і currency ще не задано
-        if (!currency && typeof w?.price === "string") {
-          const m = w.price.match(
-            /^\s*([0-9]+(?:[.,][0-9]+)?)\s+([A-Z]{3})\s*$/
-          );
-          if (m) {
-            priceStr = m[1].replace(",", "."); // нормалізуємо крапку
-            currency = m[2];
+            if (m) {
+              priceStr = m[1].replace(",", ".");
+              currency = m[2];
+            }
           }
-        }
 
-        return {
-          ...w,
-          price: priceStr,           // завжди РЯДОК ("" якщо відсутня)
-          currency: currency ?? null // код або null
-        };
-      });
-    }
+          return {
+            ...w,
+            description: w?.description ?? "",
+            image_url: w?.image_url ?? null,
+            image_public_id: w?.image_public_id ?? null,
+            product_url: w?.product_url ?? "",
+            price: priceStr,
+            currency: currency ?? null,
+          };
+        })
+      : [];
 
-    wishlistObj.reservations = reservations;
+    const wishlistObj = {
+      ...wishlist,
+      description: wishlist.description ?? "",
+      wishes: normalizedWishes,
+      reservations,
+    };
 
     return new Response(JSON.stringify(wishlistObj), {
       status: 200,
