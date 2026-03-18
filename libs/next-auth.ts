@@ -1,11 +1,30 @@
 import NextAuth from "next-auth";
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import EmailProvider from "next-auth/providers/email";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import config from "@/config";
 import connectMongo from "./mongo";
-//@ts-ignore
+
+function slugify(value?: string) {
+  return (value || "user")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function makeNickname(name?: string, googleSub?: string) {
+  const base = slugify(name);
+  const suffix =
+    googleSub?.slice(-6).toLowerCase() ||
+    Math.random().toString(36).slice(2, 8);
+
+  return `${base}_${suffix}`;
+}
+
+// @ts-ignore
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
@@ -13,32 +32,35 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.GOOGLE_ID!,
       clientSecret: process.env.GOOGLE_SECRET!,
       async profile(profile) {
-        // Form the user 
+        const displayName =
+          profile.given_name ||
+          profile.name ||
+          profile.email?.split("@")[0] ||
+          "user";
+
         return {
           id: profile.sub,
-          name: profile.given_name || profile.name,
+          name: displayName,
           email: profile.email,
           image: profile.picture,
           createdAt: new Date(),
-          // Additional fields
+
           role: "user",
-          nickname: (profile.given_name || profile.name).toLowerCase(), 
+          nickname: makeNickname(displayName, profile.sub),
           googleId: profile.sub,
-          instagramHandle: "", 
-          premiumStatus: false, 
+          instagramHandle: "",
+          premiumStatus: false,
           customerId: "",
           priceId: "",
         };
       },
-    }), 
+    }),
   ],
-    pages: {
-      signIn: "/auth/signin", 
+  pages: {
+    signIn: "/auth/signin",
   },
-  //MongoDBAdapter
   ...(connectMongo && { adapter: MongoDBAdapter(connectMongo) }),
   callbacks: {
-    // JWT callback – store additional fields in the token
     jwt: async ({ token, user }) => {
       if (user) {
         token.role = user.role;
@@ -49,9 +71,9 @@ export const authOptions: NextAuthOptions = {
         token.customerId = user.customerId;
         token.priceId = user.priceId;
       }
+
       return token;
     },
-    // Session callback – transfer data from token to session
     session: async ({ session, token }) => {
       if (session?.user) {
         session.user.id = token.sub as string;
@@ -63,6 +85,7 @@ export const authOptions: NextAuthOptions = {
         session.user.customerId = token.customerId as string;
         session.user.priceId = token.priceId as string;
       }
+
       return session;
     },
   },
