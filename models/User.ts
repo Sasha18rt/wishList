@@ -4,20 +4,30 @@ import toJSON from "./plugins/toJSON";
 
 const recentlyViewedSchema = new mongoose.Schema(
   {
-    wishlistId: { type: mongoose.Schema.Types.ObjectId, ref: "Wishlist", required: true },
+    wishlistId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Wishlist",
+      required: true,
+    },
     viewedAt: { type: Date, default: Date.now },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, trim: true },
-    email: { type: String, trim: true, lowercase: true, unique: true, required: true },
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      unique: true,
+      required: true,
+    },
     image: { type: String },
     googleId: { type: String, unique: true, sparse: true },
     nickname: { type: String, unique: true, required: true, trim: true },
-    instagramHandle: { type: String, trim: true },
+    instagramHandle: { type: String, trim: true, index: true },
     role: { type: String, default: "user" },
     premiumStatus: { type: Boolean, default: false },
     customerId: { type: String },
@@ -30,7 +40,7 @@ const userSchema = new mongoose.Schema(
   {
     timestamps: true,
     toJSON: { virtuals: true },
-  }
+  },
 );
 
 userSchema.plugin(toJSON);
