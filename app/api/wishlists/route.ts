@@ -3,7 +3,7 @@ import { authOptions } from "@/libs/next-auth";
 import connectMongo from "@/libs/mongoose";
 import Wishlist from "@/models/Wishlist";
 import User from "@/models/User";
-import { wishListSchema } from "@/app/validation/schemas";
+import { wishListSchema } from "@/libs/schemas";
 
 /**
  * @desc Create a new wishlist

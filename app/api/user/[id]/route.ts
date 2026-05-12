@@ -1,21 +1,31 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/libs/next-auth";
 import connectMongo from "@/libs/mongoose";
-import  User  from '@/models/User';
+import User from "@/models/User";
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   await connectMongo();
 
   try {
-    const user = await User.findById(params.id);
-    if (!user) return NextResponse.json({ message: 'User not found' }, { status: 404 });
+    const user = await User.findById(params.id).select("-__v");
+    if (!user) return NextResponse.json({ message: "User not found" }, { status: 404 });
 
     return NextResponse.json(user);
   } catch (error) {
-    return NextResponse.json({ message: 'Error fetching user', error }, { status: 500 });
+    return NextResponse.json({ message: "Error fetching user", error }, { status: 500 });
   }
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+  if (session.user.id !== params.id) {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+  }
+
   await connectMongo();
 
   try {
@@ -34,12 +44,20 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+  if (session.user.id !== params.id) {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+  }
+
   await connectMongo();
 
   try {
     await User.findByIdAndDelete(params.id);
-    return NextResponse.json({ message: 'User deleted' });
+    return NextResponse.json({ message: "User deleted" });
   } catch (error) {
-    return NextResponse.json({ message: 'Error deleting user', error }, { status: 500 });
+    return NextResponse.json({ message: "Error deleting user", error }, { status: 500 });
   }
 }

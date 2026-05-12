@@ -1,7 +1,7 @@
 // app/dashboard/page.tsx
 "use client";
 
-import React, { useEffect, useMemo, useState, useDeferredValue } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import useSWR, { mutate } from "swr";
 import { useRouter, usePathname } from "next/navigation";
 import CreateWishlistModal from "@/components/wishlist/CreateWishlistModal";
@@ -25,20 +25,8 @@ export type Wishlist = {
 };
 type ApiList = Wishlist[];
 
-type Reservation = {
-  _id: string;
-  wishId: string;
-  wishTitle?: string;
-  wishlistId: string;
-  wishlistTitle?: string;
-  wishImage?: string;
-  reservedAt: string;
-  note?: string | null;
-};
-type ReservationList = Reservation[];
 // ——— константи
 const KEY_WL = "/api/wishlists";
-const KEY_RES = "/api/reservations?mine=1";
 
 const fetcher = async (url: string) => {
   const r = await fetch(url, { credentials: "include", cache: "no-store" });
@@ -59,14 +47,7 @@ export default function Dashboard() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // ——— UI: пошук із debounce
-  const [rawQ] = useState("");
-  const deferredQ = useDeferredValue(rawQ);
   const [q, setQ] = useState("");
-  useEffect(() => {
-    const id = setTimeout(() => setQ(deferredQ.trim()), 250);
-    return () => clearTimeout(id);
-  }, [deferredQ]);
 
   const [visibility, setVisibility] = useState<Visibility | "all">("all");
   const [sort, setSort] = useState<"updatedAt:desc" | "updatedAt:asc">("updatedAt:desc");
@@ -99,14 +80,6 @@ export default function Dashboard() {
     revalidateIfStale: true,
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
-    keepPreviousData: true,
-  });
-
-  // ——— Дані: мої бронювання
-  useSWR<ReservationList>(KEY_RES, fetcher, {
-    revalidateOnMount: true,
-    revalidateIfStale: true,
-    revalidateOnFocus: true,
     keepPreviousData: true,
   });
 

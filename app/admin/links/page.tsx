@@ -1,6 +1,6 @@
 import connectMongo from "@/libs/mongoose";
 import Wishlist from "@/models/Wishlist";
-import CopyButton from "./CopyButton";
+import CopyButton from "../CopyButton";
 
 export const dynamic = "force-dynamic";
 

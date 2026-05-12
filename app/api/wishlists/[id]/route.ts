@@ -4,7 +4,7 @@ import connectMongo from "@/libs/mongoose";
 import Wishlist from "@/models/Wishlist";
 import User from "@/models/User";
 import Reservations from "@/models/Reservations";
-import { wishListSchema } from "@/app/validation/schemas";
+import { wishListSchema } from "@/libs/schemas";
 
 /**
  * @desc Get a specific wishlist by ID

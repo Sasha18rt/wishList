@@ -3,7 +3,7 @@ import { authOptions } from "@/libs/next-auth";
 import connectMongo from "@/libs/mongoose";
 import Wishlist from "@/models/Wishlist";
 import User from "@/models/User";
-import { wishSchema } from "@/app/validation/schemas";
+import { wishSchema } from "@/libs/schemas";
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 
@@ -137,9 +137,9 @@ export async function PUT(
       wish.image_public_id !== image_public_id
     ) {
       try {
-        // await cloudinary.uploader.destroy(wish.image_public_id);
+        await cloudinary.uploader.destroy(wish.image_public_id);
       } catch (err) {
-        console.warn("Failed to delete old image", err);
+        console.warn("Failed to delete old image from Cloudinary", err);
       }
     }
 

@@ -3,7 +3,7 @@
 import { useRef, useState, Fragment, useEffect, useMemo } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import toast from "react-hot-toast";
-import { wishSchema } from "@/app/validation/schemas";
+import { wishSchema } from "@/libs/schemas";
 import { CURRENCIES, SUPPORTED_CURRENCY_CODES } from "@/libs/currencies";
 import type { KeyboardEvent } from "react";
 

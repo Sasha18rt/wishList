@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 
 
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -16,12 +17,16 @@ export async function GET(
   try {
     await connectMongo();
 
+    if (!mongoose.isValidObjectId(params.id)) {
+      return NextResponse.json({ error: "Reservation not found" }, { status: 404 });
+    }
+
     const reservation = await Reservation.findOne({ wish_id: params.id });
     if (!reservation) {
       return NextResponse.json({ error: "Reservation not found" }, { status: 404 });
     }
 
-    const user = await User.findById(reservation.user_id);
+    const user = await User.findById(reservation.user_id).select("name nickname image");
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }

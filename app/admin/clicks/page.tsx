@@ -2,7 +2,7 @@ import connectMongo from "@/libs/mongoose";
 import OutboundClick from "@/models/OutboundClick";
 
 // маленький client компонент для копіювання
-import CopyButton from "./CopyButton";
+import CopyButton from "../CopyButton";
 
 export const dynamic = "force-dynamic";
 

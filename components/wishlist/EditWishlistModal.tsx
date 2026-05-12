@@ -3,7 +3,7 @@
 import { useState, Fragment, useEffect } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import toast from "react-hot-toast";
-import { wishListSchema } from "@/app/validation/schemas";
+import { wishListSchema } from "@/libs/schemas";
 
 interface EditWishlistModalProps {
   wishlistId: string;

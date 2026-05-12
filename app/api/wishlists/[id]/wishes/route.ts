@@ -3,11 +3,8 @@ import { authOptions } from "@/libs/next-auth";
 import connectMongo from "@/libs/mongoose";
 import Wishlist from "@/models/Wishlist";
 import User from "@/models/User";
-import { wishSchema } from "@/app/validation/schemas"; // перевірка одного wish
+import { wishSchema } from "@/libs/schemas";
 import { NextResponse } from "next/server";
-
-// допоміжне: нормалізація валюти (3 літери у верхньому регістрі)
-
 
 /**
  * GET /api/wishlists/:id/wishes

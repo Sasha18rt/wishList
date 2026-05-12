@@ -90,9 +90,6 @@ export async function GET() {
           new Date(b.viewedAt).getTime() - new Date(a.viewedAt).getTime()
       ).slice(0, 9);
 
-    // за бажанням можна обрізати топ-N
-    // .slice(0, 10)
-
     return NextResponse.json(list, { status: 200 });
   } catch (err) {
     console.error("GET /api/user/recent-wishlists error:", err);

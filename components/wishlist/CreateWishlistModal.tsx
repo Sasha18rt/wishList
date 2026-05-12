@@ -1,6 +1,6 @@
 "use client";
 
-import { wishListSchema } from "@/app/validation/schemas";
+import { wishListSchema } from "@/libs/schemas";
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment, useEffect, useState } from "react";
 import toast from "react-hot-toast";
